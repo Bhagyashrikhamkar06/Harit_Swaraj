@@ -1,130 +1,462 @@
-from fastapi import FastAPI, UploadFile, File, Form
+"""
+Harit Swaraj MRV System - Main API
+Production-ready FastAPI application with authentication, database, and ML integration
+"""
+from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from datetime import datetime
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, EmailStr
+from datetime import datetime, timedelta
 from typing import List, Optional
+from sqlalchemy.orm import Session
+import json
+
+# Local imports
+from database import get_db, init_db
+from models import User, Plot, PlotPhoto, ManufacturingBatch, Application
+from auth import (
+    hash_password, authenticate_user, create_access_token,
+    get_current_user, require_role
+)
+from file_storage import save_photo, save_video, save_kml, get_file_path, UPLOAD_DIR
 from ml.manufacturing_anomaly import get_anomaly_detector
 from ml.plot_verification import get_plot_verifier
 
-app = FastAPI(title="Harit Swaraj API")
+# Initialize FastAPI app
+app = FastAPI(
+    title="Harit Swaraj MRV API",
+    description="Production-ready API for biochar carbon credit verification",
+    version="1.0.0"
+)
 
-# Initialize ML models at startup
-anomaly_detector = get_anomaly_detector()
-plot_verifier = get_plot_verifier()
-
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # In production, specify exact origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ============ MODELS ============
-class ManufacturingInput(BaseModel):
-    batch_id: str
-    biomass_input: float
-    biochar_output: float
-    kiln_type: str
-    species: Optional[str] = None
+# Initialize ML models at startup
+anomaly_detector = get_anomaly_detector()
+plot_verifier = get_plot_verifier()
 
-class MLPrediction(BaseModel):
-    ml_status: str  # "verified" | "flagged"
-    confidence_score: float  # 0-1
-    anomaly_score: float
-    conversion_ratio: float
-    reason: str
-    timestamp: str
+# Initialize database on startup
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database and create default users"""
+    init_db()
+    
+    # Create default users if they don't exist
+    db = next(get_db())
+    try:
+        # Check if admin exists
+        admin = db.query(User).filter(User.username == "admin").first()
+        if not admin:
+            # Create default users for testing
+            default_users = [
+                User(
+                    username="admin",
+                    email="admin@haritswaraj.com",
+                    password_hash=hash_password("admin123"),
+                    role="admin",
+                    full_name="System Administrator"
+                ),
+                User(
+                    username="owner1",
+                    email="owner@haritswaraj.com",
+                    password_hash=hash_password("owner123"),
+                    role="owner",
+                    full_name="Biochar Plant Owner"
+                ),
+                User(
+                    username="farmer1",
+                    email="farmer@haritswaraj.com",
+                    password_hash=hash_password("farmer123"),
+                    role="farmer",
+                    full_name="Biomass Farmer"
+                ),
+                User(
+                    username="auditor1",
+                    email="auditor@haritswaraj.com",
+                    password_hash=hash_password("auditor123"),
+                    role="auditor",
+                    full_name="Carbon Credit Auditor"
+                )
+            ]
+            db.add_all(default_users)
+            db.commit()
+            print("✅ Default users created")
+    finally:
+        db.close()
 
-class ManufacturingRecord(BaseModel):
+# Mount static files for serving uploads
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
+# ============ PYDANTIC MODELS ============
+
+class UserRegister(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
+    role: str  # 'owner', 'farmer', 'auditor'
+    full_name: Optional[str] = None
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    user: dict
+
+class PlotResponse(BaseModel):
+    id: int
+    plot_id: str
+    farmer_id: int
+    type: str
+    species: str
+    area: float
+    expected_biomass: float
+    status: str
+    verification_data: Optional[dict] = None
+    created_at: datetime
+    photo_count: int
+
+class BatchResponse(BaseModel):
+    id: int
     batch_id: str
     biomass_input: float
     biochar_output: float
     ratio: float
     co2_removed: float
-    status: str  # Rule-based status
-    ml_prediction: Optional[MLPrediction] = None  # ML-based prediction
-    timestamp: datetime
     kiln_type: str
+    status: str
+    ml_prediction: Optional[dict] = None
+    created_at: datetime
 
-# ============ STORAGE ============
-manufacturing_records = []
+# ============ AUTHENTICATION ENDPOINTS ============
 
-# ============ EXISTING ENDPOINTS ============
-@app.get("/")
-def root():
-    return {"message": "Harit Swaraj backend running"}
-
-@app.get("/biochar/summary")
-def biochar_summary():
-    if not manufacturing_records:
-        return {
-            "biomass_tons": 0,
-            "biochar_tons": 0,
-            "co2_removed": 0
-        }
+@app.post("/auth/register", response_model=Token, status_code=status.HTTP_201_CREATED)
+async def register(user_data: UserRegister, db: Session = Depends(get_db)):
+    """
+    Register a new user
+    """
+    # Check if username exists
+    existing_user = db.query(User).filter(User.username == user_data.username).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already registered"
+        )
     
-    total_biomass = sum(r["biomass_input"] for r in manufacturing_records)
-    total_biochar = sum(r["biochar_output"] for r in manufacturing_records)
-    total_co2 = sum(r["co2_removed"] for r in manufacturing_records)
+    # Check if email exists
+    existing_email = db.query(User).filter(User.email == user_data.email).first()
+    if existing_email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
+    
+    # Validate role
+    valid_roles = ['owner', 'farmer', 'auditor', 'admin']
+    if user_data.role not in valid_roles:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid role. Must be one of: {', '.join(valid_roles)}"
+        )
+    
+    # Create new user
+    new_user = User(
+        username=user_data.username,
+        email=user_data.email,
+        password_hash=hash_password(user_data.password),
+        role=user_data.role,
+        full_name=user_data.full_name
+    )
+    
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    # Create access token
+    access_token = create_access_token(data={"sub": new_user.username})
     
     return {
-        "biomass_tons": total_biomass,
-        "biochar_tons": total_biochar,
-        "co2_removed": round(total_co2, 2)
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": new_user.id,
+            "username": new_user.username,
+            "email": new_user.email,
+            "role": new_user.role,
+            "full_name": new_user.full_name
+        }
     }
 
-class BiocharInput(BaseModel):
-    biomass_tons: float
-    biochar_tons: float
-
-@app.post("/biochar/calculate")
-def calculate_biochar(data: BiocharInput):
-    if data.biomass_tons <= 0:
-        return {"error": "Biomass must be greater than 0"}
-
-    ratio = data.biochar_tons / data.biomass_tons
-    co2_removed = data.biochar_tons * 0.8 * (44 / 12)
-
-    risk = "Normal"
-    if ratio > 0.5:
-        risk = "Suspicious – needs audit"
-
+@app.post("/auth/login", response_model=Token)
+async def login(credentials: UserLogin, db: Session = Depends(get_db)):
+    """
+    Login and get access token
+    """
+    user = authenticate_user(db, credentials.username, credentials.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Create access token
+    access_token = create_access_token(data={"sub": user.username})
+    
     return {
-        "co2_removed": round(co2_removed, 2),
-        "yield_ratio": round(ratio, 2),
-        "risk": risk
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "role": user.role,
+            "full_name": user.full_name
+        }
+    }
+
+@app.get("/auth/me")
+async def get_current_user_info(current_user: User = Depends(get_current_user)):
+    """
+    Get current user information
+    """
+    return {
+        "id": current_user.id,
+        "username": current_user.username,
+        "email": current_user.email,
+        "role": current_user.role,
+        "full_name": current_user.full_name,
+        "created_at": current_user.created_at
+    }
+
+# ============ PLOT ENDPOINTS ============
+
+@app.post("/biomass/register-plot", status_code=status.HTTP_201_CREATED)
+async def register_plot(
+    plot_id: str = Form(...),
+    type: str = Form(...),
+    species: str = Form(...),
+    area: float = Form(...),
+    expected_biomass: float = Form(...),
+    photo_0: UploadFile = File(...),
+    photo_1: UploadFile = File(...),
+    photo_2: UploadFile = File(...),
+    photo_3: UploadFile = File(...),
+    kml_file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Register a new biomass plot with photos and KML file
+    Requires: farmer or owner role
+    """
+    # Check role
+    if current_user.role not in ['farmer', 'owner']:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only farmers and owners can register plots"
+        )
+    
+    # Check if plot_id already exists
+    existing_plot = db.query(Plot).filter(Plot.plot_id == plot_id).first()
+    if existing_plot:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Plot ID {plot_id} already exists"
+        )
+    
+    # Save KML file and run verification
+    kml_path = await save_kml(kml_file, plot_id)
+    
+    # Read KML content for verification
+    kml_content = await kml_file.read()
+    kml_string = kml_content.decode('utf-8')
+    
+    # Run ML verification
+    verification_result = plot_verifier.verify_plot(kml_string, str(current_user.id), plot_id)
+    
+    # Determine initial status based on verification
+    initial_status = "verified" if verification_result.get("plot_status") == "verified" else "suspicious"
+    
+    # Create plot record
+    new_plot = Plot(
+        plot_id=plot_id,
+        farmer_id=current_user.id,
+        type=type,
+        species=species,
+        area=area,
+        expected_biomass=expected_biomass,
+        status=initial_status,
+        kml_file_path=kml_path,
+        verification_data=verification_result
+    )
+    
+    db.add(new_plot)
+    db.commit()
+    db.refresh(new_plot)
+    
+    # Save photos
+    photos = [photo_0, photo_1, photo_2, photo_3]
+    for idx, photo in enumerate(photos):
+        photo_path = await save_photo(photo, plot_id, idx)
+        
+        plot_photo = PlotPhoto(
+            plot_id=new_plot.id,
+            photo_path=photo_path,
+            photo_index=idx
+        )
+        db.add(plot_photo)
+    
+    db.commit()
+    
+    return {
+        "message": "Plot registered successfully",
+        "plot_id": plot_id,
+        "status": initial_status,
+        "verification": verification_result
+    }
+
+@app.get("/biomass/plots", response_model=List[PlotResponse])
+async def get_plots(
+    status: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get plots (filtered by user role)
+    - Farmers see only their plots
+    - Owners/Auditors/Admins see all plots
+    """
+    query = db.query(Plot)
+    
+    # Filter by user role
+    if current_user.role == 'farmer':
+        query = query.filter(Plot.farmer_id == current_user.id)
+    
+    # Filter by status if provided
+    if status:
+        query = query.filter(Plot.status == status)
+    
+    plots = query.order_by(Plot.created_at.desc()).all()
+    
+    # Add photo count to response
+    result = []
+    for plot in plots:
+        photo_count = db.query(PlotPhoto).filter(PlotPhoto.plot_id == plot.id).count()
+        result.append(PlotResponse(
+            id=plot.id,
+            plot_id=plot.plot_id,
+            farmer_id=plot.farmer_id,
+            type=plot.type,
+            species=plot.species,
+            area=plot.area,
+            expected_biomass=plot.expected_biomass,
+            status=plot.status,
+            verification_data=plot.verification_data,
+            created_at=plot.created_at,
+            photo_count=photo_count
+        ))
+    
+    return result
+
+@app.get("/biomass/plots/{plot_id}")
+async def get_plot_details(
+    plot_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get detailed plot information including photos
+    """
+    plot = db.query(Plot).filter(Plot.plot_id == plot_id).first()
+    
+    if not plot:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Plot {plot_id} not found"
+        )
+    
+    # Check access permissions
+    if current_user.role == 'farmer' and plot.farmer_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
+        )
+    
+    # Get photos
+    photos = db.query(PlotPhoto).filter(PlotPhoto.plot_id == plot.id).order_by(PlotPhoto.photo_index).all()
+    
+    return {
+        "plot_id": plot.plot_id,
+        "type": plot.type,
+        "species": plot.species,
+        "area": plot.area,
+        "expected_biomass": plot.expected_biomass,
+        "status": plot.status,
+        "kml_file": f"/uploads/{plot.kml_file_path}" if plot.kml_file_path else None,
+        "verification_data": plot.verification_data,
+        "created_at": plot.created_at,
+        "photos": [f"/uploads/{photo.photo_path}" for photo in photos]
     }
 
 # ============ MANUFACTURING ENDPOINTS ============
-@app.post("/manufacturing/record")
-def record_manufacturing(data: ManufacturingInput):
+
+@app.post("/manufacturing/record", status_code=status.HTTP_201_CREATED)
+async def create_manufacturing_batch(
+    batch_id: str = Form(...),
+    biomass_input: float = Form(...),
+    biochar_output: float = Form(...),
+    kiln_type: str = Form(...),
+    species: Optional[str] = Form(None),
+    video: Optional[UploadFile] = File(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """
-    Record a new biochar production batch with ML anomaly detection.
-    
-    Hybrid approach:
-    1. Rule-based: Validate against known standards (0.20-0.30 ratio)
-    2. ML-based: Isolation Forest detects unknown anomalies
-    
-    Returns both statuses for comprehensive audit trail.
+    Record a new biochar manufacturing batch
+    Requires: owner role
     """
-    ratio = data.biochar_output / data.biomass_input
-    co2 = data.biochar_output * 0.8 * (44 / 12)
+    # Check role
+    if current_user.role not in ['owner', 'admin']:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owners can record manufacturing batches"
+        )
     
-    # Rule-based validation: conversion ratio must be 0.20-0.30
-    rule_status = "verified"
-    if ratio < 0.20 or ratio > 0.30:
-        rule_status = "flagged"
+    # Check if batch_id already exists
+    existing_batch = db.query(ManufacturingBatch).filter(ManufacturingBatch.batch_id == batch_id).first()
+    if existing_batch:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Batch ID {batch_id} already exists"
+        )
+    
+    # Calculate ratio and CO2
+    ratio = biochar_output / biomass_input
+    co2_removed = biochar_output * 0.8 * (44 / 12)
+    
+    # Rule-based validation
+    rule_status = "verified" if 0.20 <= ratio <= 0.30 else "flagged"
     
     # ML-based anomaly detection
     try:
         ml_prediction = anomaly_detector.predict(
-            biomass_input=data.biomass_input,
-            biochar_output=data.biochar_output,
-            kiln_type=data.kiln_type
+            biomass_input=biomass_input,
+            biochar_output=biochar_output,
+            kiln_type=kiln_type
         )
     except Exception as e:
-        print(f"⚠️  ML prediction error: {e}")
+        print(f"⚠️ ML prediction error: {e}")
         ml_prediction = {
             "ml_status": "error",
             "confidence_score": 0.0,
@@ -134,85 +466,161 @@ def record_manufacturing(data: ManufacturingInput):
             "timestamp": datetime.utcnow().isoformat()
         }
     
-    # Final status: combine both approaches
-    # If either rule or ML flags it, mark as flagged
+    # Final status
     final_status = "flagged" if (rule_status == "flagged" or ml_prediction.get("ml_status") == "flagged") else "verified"
     
-    record = {
-        "batch_id": data.batch_id,
-        "biomass_input": data.biomass_input,
-        "biochar_output": data.biochar_output,
-        "ratio": round(ratio, 4),
-        "co2_removed": round(co2, 2),
-        "status": final_status,  # Final combined status
-        "rule_status": rule_status,  # Rule-based only
-        "ml_prediction": ml_prediction,  # ML prediction details
-        "kiln_type": data.kiln_type,
-        "species": data.species,
-        "timestamp": datetime.utcnow().isoformat()
-    }
+    # Save video if provided
+    video_path = None
+    if video:
+        video_path = await save_video(video, batch_id)
     
-    manufacturing_records.append(record)
-    return record
+    # Create batch record
+    new_batch = ManufacturingBatch(
+        batch_id=batch_id,
+        biomass_input=biomass_input,
+        biochar_output=biochar_output,
+        ratio=ratio,
+        co2_removed=co2_removed,
+        kiln_type=kiln_type,
+        species=species,
+        status=final_status,
+        rule_status=rule_status,
+        ml_prediction=ml_prediction,
+        video_path=video_path,
+        user_id=current_user.id
+    )
+    
+    db.add(new_batch)
+    db.commit()
+    db.refresh(new_batch)
+    
+    return {
+        "message": "Batch recorded successfully",
+        "batch_id": batch_id,
+        "status": final_status,
+        "ratio": round(ratio, 4),
+        "co2_removed": round(co2_removed, 2),
+        "rule_status": rule_status,
+        "ml_prediction": ml_prediction
+    }
 
-@app.get("/manufacturing/history")
-def get_manufacturing_history() -> List[dict]:
-    """Get all manufacturing records"""
-    return manufacturing_records
-
-@app.get("/manufacturing/batches")
-def get_batches():
-    """Get all batches in dashboard format"""
-    return [
-        {
-            "id": r["batch_id"],
-            "biomass": r["biomass_input"],
-            "biochar": r["biochar_output"],
-            "ratio": r["ratio"],
-            "co2": r["co2_removed"],
-            "status": r["status"]
-        }
-        for r in manufacturing_records
-    ]
-
-# ============ PLOT VERIFICATION ENDPOINT ============
-@app.post("/biomass/verify-plot")
-async def verify_plot(
-    kml_file: UploadFile = File(...),
-    farmer_id: str = Form(...),
-    plot_id: str = Form(...)
+@app.get("/manufacturing/batches", response_model=List[BatchResponse])
+async def get_batches(
+    status: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """
-    Verify KML plot for fraud detection using ML
-    
-    Detection methods:
-    1. Area anomaly detection (Isolation Forest)
-    2. Shape similarity detection (Hausdorff distance)
-    3. Overlap detection (Shapely intersection)
-    4. Spatial clustering (DBSCAN)
-    
-    Returns:
-    - plot_status: "verified" | "suspicious"
-    - confidence_score: 0-1
-    - anomaly_reasons: List of human-readable warnings
-    - overlap_percentage: % overlap with existing plots
-    - similar_plot_ids: IDs of similar plots
+    Get manufacturing batches
     """
-    try:
-        # Read KML file content
-        kml_content = await kml_file.read()
-        kml_string = kml_content.decode('utf-8')
-        
-        # Run ML verification
-        result = plot_verifier.verify_plot(kml_string, farmer_id, plot_id)
-        
-        return result
-        
-    except Exception as e:
-        return {
-            "plot_status": "error",
-            "confidence_score": 0.0,
-            "anomaly_reasons": [f"Verification error: {str(e)}"],
-            "error": str(e),
-            "timestamp": datetime.utcnow().isoformat()
-        }
+    query = db.query(ManufacturingBatch)
+    
+    # Filter by status if provided
+    if status:
+        query = query.filter(ManufacturingBatch.status == status)
+    
+    batches = query.order_by(ManufacturingBatch.created_at.desc()).all()
+    
+    return [
+        BatchResponse(
+            id=batch.id,
+            batch_id=batch.batch_id,
+            biomass_input=batch.biomass_input,
+            biochar_output=batch.biochar_output,
+            ratio=batch.ratio,
+            co2_removed=batch.co2_removed,
+            kiln_type=batch.kiln_type,
+            status=batch.status,
+            ml_prediction=batch.ml_prediction,
+            created_at=batch.created_at
+        )
+        for batch in batches
+    ]
+
+@app.get("/manufacturing/batches/{batch_id}")
+async def get_batch_details(
+    batch_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get detailed batch information
+    """
+    batch = db.query(ManufacturingBatch).filter(ManufacturingBatch.batch_id == batch_id).first()
+    
+    if not batch:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Batch {batch_id} not found"
+        )
+    
+    return {
+        "batch_id": batch.batch_id,
+        "biomass_input": batch.biomass_input,
+        "biochar_output": batch.biochar_output,
+        "ratio": batch.ratio,
+        "co2_removed": batch.co2_removed,
+        "kiln_type": batch.kiln_type,
+        "species": batch.species,
+        "status": batch.status,
+        "rule_status": batch.rule_status,
+        "ml_prediction": batch.ml_prediction,
+        "video": f"/uploads/{batch.video_path}" if batch.video_path else None,
+        "created_at": batch.created_at
+    }
+
+# ============ DASHBOARD ENDPOINTS ============
+
+@app.get("/dashboard/summary")
+async def get_dashboard_summary(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get dashboard summary statistics
+    """
+    # Get batches
+    batches_query = db.query(ManufacturingBatch)
+    if current_user.role == 'owner':
+        batches_query = batches_query.filter(ManufacturingBatch.user_id == current_user.id)
+    
+    batches = batches_query.all()
+    
+    total_biochar = sum(b.biochar_output for b in batches)
+    total_co2 = sum(b.co2_removed for b in batches)
+    verified_batches = len([b for b in batches if b.status == 'verified'])
+    flagged_batches = len([b for b in batches if b.status == 'flagged'])
+    
+    # Get plots
+    plots_query = db.query(Plot)
+    if current_user.role == 'farmer':
+        plots_query = plots_query.filter(Plot.farmer_id == current_user.id)
+    
+    plots = plots_query.all()
+    total_plots = len(plots)
+    verified_plots = len([p for p in plots if p.status == 'verified'])
+    
+    return {
+        "total_biochar_kg": round(total_biochar, 2),
+        "total_co2_removed_kg": round(total_co2, 2),
+        "total_batches": len(batches),
+        "verified_batches": verified_batches,
+        "flagged_batches": flagged_batches,
+        "total_plots": total_plots,
+        "verified_plots": verified_plots
+    }
+
+# ============ ROOT ENDPOINT ============
+
+@app.get("/")
+def root():
+    return {
+        "message": "Harit Swaraj MRV API",
+        "version": "1.0.0",
+        "status": "running",
+        "docs": "/docs"
+    }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
