@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Sample Biomass Plot</name>
+    <description>2.5 hectare bamboo plantation</description>
+    <Placemark>
+      <name>PLT-TEST-001</name>
+      <description>Test plot for verification</description>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              77.5946,12.9716,0
+              77.5956,12.9716,0
+              77.5956,12.9726,0
+              77.5946,12.9726,0
+              77.5946,12.9716,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Upload, CheckCircle, AlertTriangle, Users, Leaf, Factory, TrendingUp, Menu, X, Home, FileText, Truck, Droplet, MapPin, ClipboardCheck, Flame, Package } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Upload, CheckCircle, AlertTriangle, Users, Leaf, Factory, TrendingUp, Menu, X, Home, FileText, Truck, Droplet, MapPin, ClipboardCheck, Flame, Package, Camera, Trash2, Check, Image as ImageIcon } from 'lucide-react';
 
 const HaritSwarajMRV = () => {
   const [activeModule, setActiveModule] = useState('dashboard');
@@ -10,7 +10,7 @@ const HaritSwarajMRV = () => {
   const [biomassPlots, setBiomassPlots] = useState([
     { id: 'PLT-001', type: 'Wood', species: 'Bamboo', area: 2.5, expectedBiomass: 15.5, status: 'locked' }
   ]);
-  
+
   const [biocharBatches, setBiocharBatches] = useState([
     { id: 'BCH-001', biomass: 500, biochar: 125, ratio: 0.25, co2: 458.33, status: 'verified' },
     { id: 'BCH-002', biomass: 450, biochar: 108, ratio: 0.24, co2: 396, status: 'pending' },
@@ -61,7 +61,7 @@ const HaritSwarajMRV = () => {
   };
 
   const calculateCO2 = (biocharKg) => {
-    return (biocharKg * 0.8 * (44/12)).toFixed(2);
+    return (biocharKg * 0.8 * (44 / 12)).toFixed(2);
   };
 
   const totalBiochar = biocharBatches.reduce((sum, b) => sum + b.biochar, 0);
@@ -139,11 +139,10 @@ const HaritSwarajMRV = () => {
                   <td className="px-6 py-4">{batch.ratio.toFixed(2)}</td>
                   <td className="px-6 py-4">{batch.co2.toFixed(2)}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      batch.status === 'verified' ? 'bg-green-100 text-green-800' :
+                    <span className={`px-2 py-1 rounded text-xs ${batch.status === 'verified' ? 'bg-green-100 text-green-800' :
                       batch.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
+                        'bg-red-100 text-red-800'
+                      }`}>
                       {batch.status}
                     </span>
                   </td>
@@ -157,11 +156,10 @@ const HaritSwarajMRV = () => {
             <div key={batch.id} className="p-4">
               <div className="flex justify-between mb-2">
                 <span className="font-semibold">{batch.id}</span>
-                <span className={`px-2 py-1 rounded text-xs ${
-                  batch.status === 'verified' ? 'bg-green-100 text-green-800' :
+                <span className={`px-2 py-1 rounded text-xs ${batch.status === 'verified' ? 'bg-green-100 text-green-800' :
                   batch.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
+                    'bg-red-100 text-red-800'
+                  }`}>
                   {batch.status}
                 </span>
               </div>
@@ -178,14 +176,269 @@ const HaritSwarajMRV = () => {
     </div>
   );
 
+  // Camera Capture Component
+  const CameraCapture = ({ onCapture, onClose }) => {
+    const videoRef = useRef(null);
+    const canvasRef = useRef(null);
+    const streamRef = useRef(null);
+    const [capturedPhoto, setCapturedPhoto] = useState(null);
+    const [cameraError, setCameraError] = useState(null);
+
+    useEffect(() => {
+      startCamera();
+      return () => stopCamera();
+    }, []);
+
+    const startCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+        });
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (err) {
+        console.error('Camera error:', err);
+        setCameraError('Camera access denied. Please enable camera permissions or upload a file instead.');
+      }
+    };
+
+    const stopCamera = () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+
+    const capturePhoto = () => {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      if (video && canvas) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        const photoDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        setCapturedPhoto(photoDataUrl);
+      }
+    };
+
+    const confirmPhoto = () => {
+      if (capturedPhoto) {
+        onCapture(capturedPhoto);
+        stopCamera();
+        onClose();
+      }
+    };
+
+    const retakePhoto = () => {
+      setCapturedPhoto(null);
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-auto">
+          <div className="p-4 border-b flex justify-between items-center">
+            <h3 className="text-lg font-semibold">📸 Capture Photo</h3>
+            <button onClick={() => { stopCamera(); onClose(); }} className="text-gray-500 hover:text-gray-700">
+              <X size={24} />
+            </button>
+          </div>
+
+          <div className="p-4">
+            {cameraError ? (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                <AlertTriangle className="mx-auto mb-3 text-red-500" size={48} />
+                <p className="text-red-800 mb-4">{cameraError}</p>
+                <button onClick={onClose} className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700">
+                  Close
+                </button>
+              </div>
+            ) : (
+              <>
+                {!capturedPhoto ? (
+                  <div className="space-y-4">
+                    <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '16/9' }}>
+                      <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                    </div>
+                    <button onClick={capturePhoto} className="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 flex items-center justify-center gap-2">
+                      <Camera size={20} />
+                      Capture Photo
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="relative bg-gray-100 rounded-lg overflow-hidden">
+                      <img src={capturedPhoto} alt="Captured" className="w-full h-auto" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button onClick={retakePhoto} className="bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700 flex items-center justify-center gap-2">
+                        <Camera size={20} />
+                        Retake
+                      </button>
+                      <button onClick={confirmPhoto} className="bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 flex items-center justify-center gap-2">
+                        <Check size={20} />
+                        Confirm
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          <canvas ref={canvasRef} style={{ display: 'none' }} />
+        </div>
+      </div>
+    );
+  };
+
+  // Photo Slot Component
+  const PhotoSlot = ({ photo, index, onCapture, onDelete, onUpload }) => {
+    const fileInputRef = useRef(null);
+
+    const handleFileSelect = (e) => {
+      const file = e.target.files[0];
+      if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          onUpload(event.target.result);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        alert('Please select a valid image file');
+      }
+    };
+
+    return (
+      <div className="relative border-2 border-dashed rounded-lg overflow-hidden" style={{ aspectRatio: '4/3' }}>
+        {photo ? (
+          <>
+            <img src={photo} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+            <button onClick={onDelete} className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full hover:bg-red-700 shadow-lg">
+              <Trash2 size={16} />
+            </button>
+          </>
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center p-4 bg-gray-50">
+            <Camera className="text-gray-400 mb-2" size={24} />
+            <p className="text-xs text-gray-600 mb-3">Photo {index + 1}</p>
+            <div className="flex gap-2">
+              <button onClick={onCapture} className="bg-green-600 text-white px-3 py-1.5 rounded text-xs hover:bg-green-700 flex items-center gap-1">
+                <Camera size={14} />
+                Camera
+              </button>
+              <button onClick={() => fileInputRef.current?.click()} className="bg-blue-600 text-white px-3 py-1.5 rounded text-xs hover:bg-blue-700 flex items-center gap-1">
+                <Upload size={14} />
+                Upload
+              </button>
+            </div>
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const BiomassIdentificationForm = () => {
     const [form, setForm] = useState({ plotId: '', type: 'Wood', species: 'Bamboo', area: '', biomass: '' });
+    const [photos, setPhotos] = useState([null, null, null, null]);
+    const [kmlFile, setKmlFile] = useState(null);
+    const [showCamera, setShowCamera] = useState(false);
+    const [activePhotoSlot, setActivePhotoSlot] = useState(null);
+    const [plotVerification, setPlotVerification] = useState(null);
+    const [verifying, setVerifying] = useState(false);
+    const kmlInputRef = useRef(null);
+
+    const handlePhotoCapture = (photoDataUrl) => {
+      if (activePhotoSlot !== null) {
+        const newPhotos = [...photos];
+        newPhotos[activePhotoSlot] = photoDataUrl;
+        setPhotos(newPhotos);
+      }
+    };
+
+    const handlePhotoDelete = (index) => {
+      const newPhotos = [...photos];
+      newPhotos[index] = null;
+      setPhotos(newPhotos);
+    };
+
+    const handleKmlUpload = async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        if (file.name.endsWith('.kml') || file.type === 'application/vnd.google-earth.kml+xml') {
+          setKmlFile(file);
+          await verifyPlot(file);
+        } else {
+          alert('Please upload a valid KML file');
+        }
+      }
+    };
+
+    const handleKmlDrop = async (e) => {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (file && (file.name.endsWith('.kml') || file.type === 'application/vnd.google-earth.kml+xml')) {
+        setKmlFile(file);
+        await verifyPlot(file);
+      } else {
+        alert('Please drop a valid KML file');
+      }
+    };
+
+    const verifyPlot = async (file) => {
+      if (!form.plotId) {
+        alert('⚠️ Please enter Plot ID first');
+        return;
+      }
+
+      setVerifying(true);
+      setPlotVerification(null);
+
+      try {
+        const formData = new FormData();
+        formData.append('kml_file', file);
+        formData.append('farmer_id', 'FRM-001'); // Replace with actual user ID
+        formData.append('plot_id', form.plotId);
+
+        const response = await fetch('http://127.0.0.1:8000/biomass/verify-plot', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+        setPlotVerification(result);
+      } catch (error) {
+        console.error('Plot verification error:', error);
+        setPlotVerification({
+          plot_status: 'error',
+          anomaly_reasons: ['Verification service unavailable']
+        });
+      } finally {
+        setVerifying(false);
+      }
+    };
 
     const submit = () => {
-      setBiomassPlots([...biomassPlots, { ...form, id: form.plotId, status: 'locked' }]);
+      const photoCount = photos.filter(p => p !== null).length;
+      if (photoCount < 4) {
+        alert(`❌ Please capture all 4 photos (${photoCount}/4 captured)`);
+        return;
+      }
+      if (!kmlFile) {
+        alert('❌ Please upload a KML file');
+        return;
+      }
+
+      setBiomassPlots([...biomassPlots, { ...form, id: form.plotId, status: 'locked', photos, kmlFile: kmlFile.name, verification: plotVerification }]);
       alert('✅ Plot registered and locked!');
       setForm({ plotId: '', type: 'Wood', species: 'Bamboo', area: '', biomass: '' });
+      setPhotos([null, null, null, null]);
+      setKmlFile(null);
+      setPlotVerification(null);
     };
+
+    const photoCount = photos.filter(p => p !== null).length;
 
     return (
       <div className="bg-white rounded-lg shadow p-4 md:p-6 max-w-2xl mx-auto">
@@ -194,11 +447,11 @@ const HaritSwarajMRV = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Plot ID</label>
-              <input value={form.plotId} onChange={e => setForm({...form, plotId: e.target.value})} className="w-full border rounded px-3 py-2" placeholder="PLT-002" />
+              <input value={form.plotId} onChange={e => setForm({ ...form, plotId: e.target.value })} className="w-full border rounded px-3 py-2" placeholder="PLT-002" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Biomass Type</label>
-              <select value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="w-full border rounded px-3 py-2">
+              <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} className="w-full border rounded px-3 py-2">
                 <option>Wood</option>
                 <option>Agricultural Waste</option>
               </select>
@@ -207,7 +460,7 @@ const HaritSwarajMRV = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Species</label>
-              <select value={form.species} onChange={e => setForm({...form, species: e.target.value})} className="w-full border rounded px-3 py-2">
+              <select value={form.species} onChange={e => setForm({ ...form, species: e.target.value })} className="w-full border rounded px-3 py-2">
                 <option>Bamboo</option>
                 <option>Babul</option>
                 <option>Neem</option>
@@ -216,31 +469,133 @@ const HaritSwarajMRV = () => {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Area (acres)</label>
-              <input type="number" value={form.area} onChange={e => setForm({...form, area: e.target.value})} className="w-full border rounded px-3 py-2" placeholder="2.5" />
+              <input type="number" value={form.area} onChange={e => setForm({ ...form, area: e.target.value })} className="w-full border rounded px-3 py-2" placeholder="2.5" />
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Expected Biomass (tons)</label>
-            <input type="number" value={form.biomass} onChange={e => setForm({...form, biomass: e.target.value})} className="w-full border rounded px-3 py-2" placeholder="15.5" />
+            <input type="number" value={form.biomass} onChange={e => setForm({ ...form, biomass: e.target.value })} className="w-full border rounded px-3 py-2" placeholder="15.5" />
           </div>
+
           <div>
             <label className="block text-sm font-medium mb-2">KML File Upload</label>
-            <div className="border-2 border-dashed rounded-lg p-6 text-center">
-              <Upload className="mx-auto mb-2 text-gray-400" size={28} />
-              <p className="text-sm text-gray-600">Drop KML file or click to browse</p>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">Geotagged Photos (4 required)</label>
-            <div className="grid grid-cols-2 gap-2">
-              {[1,2,3,4].map(i => (
-                <div key={i} className="border-2 border-dashed rounded p-4 text-center">
-                  <Upload className="mx-auto text-gray-400" size={20} />
-                  <p className="text-xs mt-1">Photo {i}</p>
+            <div
+              onClick={() => kmlInputRef.current?.click()}
+              onDrop={handleKmlDrop}
+              onDragOver={(e) => e.preventDefault()}
+              className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors"
+            >
+              {kmlFile ? (
+                <div className="flex items-center justify-center gap-3">
+                  <CheckCircle className="text-green-600" size={24} />
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-green-800">{kmlFile.name}</p>
+                    <p className="text-xs text-gray-600">{(kmlFile.size / 1024).toFixed(1)} KB</p>
+                  </div>
+                  <button onClick={(e) => { e.stopPropagation(); setKmlFile(null); }} className="ml-auto text-red-600 hover:text-red-800">
+                    <Trash2 size={18} />
+                  </button>
                 </div>
+              ) : (
+                <>
+                  <Upload className="mx-auto mb-2 text-gray-400" size={28} />
+                  <p className="text-sm text-gray-600">Drop KML file or click to browse</p>
+                </>
+              )}
+            </div>
+            <input ref={kmlInputRef} type="file" accept=".kml,application/vnd.google-earth.kml+xml" onChange={handleKmlUpload} className="hidden" />
+          </div>
+
+          {/* Plot Verification Results */}
+          {verifying && (
+            <div className="bg-blue-50 p-4 rounded border-l-4 border-blue-500">
+              <p className="text-sm text-blue-800">🔍 Verifying plot...</p>
+            </div>
+          )}
+
+          {plotVerification && (
+            <div className={`p-4 rounded border-l-4 ${plotVerification.plot_status === 'verified'
+                ? 'bg-green-50 border-green-500'
+                : plotVerification.plot_status === 'suspicious'
+                  ? 'bg-yellow-50 border-yellow-500'
+                  : 'bg-red-50 border-red-500'
+              }`}>
+              <div className="flex items-center justify-between mb-2">
+                <p className={`text-sm font-semibold ${plotVerification.plot_status === 'verified'
+                    ? 'text-green-800'
+                    : plotVerification.plot_status === 'suspicious'
+                      ? 'text-yellow-800'
+                      : 'text-red-800'
+                  }`}>
+                  {plotVerification.plot_status === 'verified'
+                    ? '✅ Plot Verified'
+                    : plotVerification.plot_status === 'suspicious'
+                      ? '⚠️ Plot Flagged for Review'
+                      : '❌ Verification Error'}
+                </p>
+                {plotVerification.confidence_score !== undefined && (
+                  <span className="text-xs bg-white px-2 py-1 rounded font-mono">
+                    Confidence: {(plotVerification.confidence_score * 100).toFixed(0)}%
+                  </span>
+                )}
+              </div>
+
+              {plotVerification.features && (
+                <div className="grid grid-cols-2 gap-2 text-xs mb-2 bg-white p-2 rounded">
+                  <div><span className="text-gray-600">Area:</span> {plotVerification.features.area_hectares} ha</div>
+                  <div><span className="text-gray-600">Perimeter:</span> {plotVerification.features.perimeter_meters.toFixed(0)} m</div>
+                  <div><span className="text-gray-600">Vertices:</span> {plotVerification.features.num_vertices}</div>
+                  <div><span className="text-gray-600">Complexity:</span> {plotVerification.features.shape_complexity.toFixed(2)}</div>
+                </div>
+              )}
+
+              {plotVerification.anomaly_reasons && plotVerification.anomaly_reasons.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-xs font-medium mb-1">Warnings:</p>
+                  <ul className="text-xs space-y-1">
+                    {plotVerification.anomaly_reasons.map((reason, i) => (
+                      <li key={i} className="flex items-start gap-1">
+                        <span>•</span>
+                        <span>{reason}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {plotVerification.plot_status === 'suspicious' && (
+                <div className="mt-3 p-2 bg-white rounded text-xs">
+                  <p className="font-medium">⚠️ Auditor Review Required</p>
+                  <p className="text-gray-600 mt-1">
+                    This plot will be flagged for manual verification before approval.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Geotagged Photos ({photoCount}/4 captured)
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {photos.map((photo, index) => (
+                <PhotoSlot
+                  key={index}
+                  photo={photo}
+                  index={index}
+                  onCapture={() => { setActivePhotoSlot(index); setShowCamera(true); }}
+                  onDelete={() => handlePhotoDelete(index)}
+                  onUpload={(photoDataUrl) => {
+                    const newPhotos = [...photos];
+                    newPhotos[index] = photoDataUrl;
+                    setPhotos(newPhotos);
+                  }}
+                />
               ))}
             </div>
           </div>
+
           <div className="bg-blue-50 p-4 rounded border-l-4 border-blue-500">
             <p className="text-sm text-blue-800"><strong>Note:</strong> Plot will be locked after submission</p>
           </div>
@@ -248,6 +603,13 @@ const HaritSwarajMRV = () => {
             🔒 Register & Lock Plot
           </button>
         </div>
+
+        {showCamera && (
+          <CameraCapture
+            onCapture={handlePhotoCapture}
+            onClose={() => { setShowCamera(false); setActivePhotoSlot(null); }}
+          />
+        )}
       </div>
     );
   };
@@ -255,7 +617,10 @@ const HaritSwarajMRV = () => {
   const ManufacturingForm = () => {
     const [form, setForm] = useState({ batchId: '', kiln: 'Batch Retort Kiln', input: '', output: '' });
     const [alert, setAlert] = useState(null);
+    const [mlResult, setMlResult] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+    const [processingVideo, setProcessingVideo] = useState(null);
+    const videoInputRef = useRef(null);
 
     const handleChange = (field, value) => {
       const updated = { ...form, [field]: value };
@@ -263,6 +628,38 @@ const HaritSwarajMRV = () => {
       if (updated.input && updated.output) {
         const ratio = parseFloat(updated.output) / parseFloat(updated.input);
         setAlert(validateConversionRatio(ratio));
+      }
+    };
+
+    const handleVideoUpload = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const validVideoTypes = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo'];
+        if (validVideoTypes.includes(file.type)) {
+          const maxSize = 100 * 1024 * 1024; // 100MB
+          if (file.size <= maxSize) {
+            setProcessingVideo(file);
+          } else {
+            alert('❌ Video file too large. Maximum size is 100MB');
+          }
+        } else {
+          alert('❌ Please upload a valid video file (MP4, WebM, MOV, AVI)');
+        }
+      }
+    };
+
+    const handleVideoDrop = (e) => {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('video/')) {
+        const maxSize = 100 * 1024 * 1024; // 100MB
+        if (file.size <= maxSize) {
+          setProcessingVideo(file);
+        } else {
+          alert('❌ Video file too large. Maximum size is 100MB');
+        }
+      } else {
+        alert('❌ Please drop a valid video file');
       }
     };
 
@@ -286,10 +683,17 @@ const HaritSwarajMRV = () => {
         });
 
         const data = await res.json();
-        alert(`✅ Batch recorded!\nStatus: ${data.status}`);
+
+        // Store ML result for display
+        if (data.ml_prediction) {
+          setMlResult(data.ml_prediction);
+        }
+
+        alert(`✅ Batch recorded!\nStatus: ${data.status}\nML Confidence: ${data.ml_prediction?.confidence_score || 'N/A'}`);
         await fetchBatches();
         setForm({ batchId: '', kiln: 'Batch Retort Kiln', input: '', output: '' });
         setAlert(null);
+        setProcessingVideo(null);
       } catch (err) {
         alert(`❌ Error: ${err.message}`);
       } finally {
@@ -324,23 +728,82 @@ const HaritSwarajMRV = () => {
               <input type="number" value={form.output} onChange={e => handleChange('output', e.target.value)} className="w-full border rounded px-3 py-2" placeholder="125" />
             </div>
           </div>
+
+          {/* Rule-based validation alert */}
           {alert && alert.flag && (
             <div className="bg-red-50 p-4 rounded border-l-4 border-red-500">
-              <p className="text-sm text-red-800"><strong>⚠️ ML Alert:</strong> {alert.reason}</p>
+              <p className="text-sm text-red-800"><strong>⚠️ Rule Alert:</strong> {alert.reason}</p>
             </div>
           )}
           {alert && !alert.flag && (
             <div className="bg-green-50 p-4 rounded border-l-4 border-green-500">
-              <p className="text-sm text-green-800"><strong>✅ Valid:</strong> Ratio within expected range (0.20-0.30)</p>
+              <p className="text-sm text-green-800"><strong>✅ Rules OK:</strong> Ratio within expected range (0.20-0.30)</p>
             </div>
           )}
+
+          {/* ML Anomaly Detection Result */}
+          {mlResult && (
+            <div className={`p-4 rounded border-l-4 ${mlResult.ml_status === 'verified' ? 'bg-green-50 border-green-500' : 'bg-red-50 border-red-500'}`}>
+              <div className="flex items-center justify-between mb-2">
+                <p className={`text-sm font-semibold ${mlResult.ml_status === 'verified' ? 'text-green-800' : 'text-red-800'}`}>
+                  {mlResult.ml_status === 'verified' ? '✅ ML Verified' : '🚨 ML Flagged'}
+                </p>
+                <p className="text-xs font-mono bg-white px-2 py-1 rounded">
+                  Confidence: {(mlResult.confidence_score * 100).toFixed(0)}%
+                </p>
+              </div>
+              <p className="text-xs text-gray-700 mb-2">{mlResult.reason}</p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div><span className="text-gray-600">Ratio:</span> {mlResult.conversion_ratio.toFixed(2)}</div>
+                <div><span className="text-gray-600">Anomaly Score:</span> {mlResult.anomaly_score.toFixed(3)}</div>
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium mb-2">Processing Video</label>
-            <div className="border-2 border-dashed rounded-lg p-6 text-center">
-              <Upload className="mx-auto mb-2 text-gray-400" size={28} />
-              <p className="text-sm text-gray-600">Upload production video</p>
+            <div
+              onClick={() => videoInputRef.current?.click()}
+              onDrop={handleVideoDrop}
+              onDragOver={(e) => e.preventDefault()}
+              className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors"
+            >
+              {processingVideo ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-center gap-3">
+                    <CheckCircle className="text-green-600" size={24} />
+                    <div className="text-left">
+                      <p className="text-sm font-medium text-green-800">{processingVideo.name}</p>
+                      <p className="text-xs text-gray-600">{(processingVideo.size / (1024 * 1024)).toFixed(2)} MB</p>
+                    </div>
+                    <button onClick={(e) => { e.stopPropagation(); setProcessingVideo(null); }} className="ml-auto text-red-600 hover:text-red-800">
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                  {processingVideo.type.startsWith('video/') && (
+                    <video
+                      src={URL.createObjectURL(processingVideo)}
+                      controls
+                      className="w-full max-h-64 rounded-lg bg-black"
+                    />
+                  )}
+                </div>
+              ) : (
+                <>
+                  <Upload className="mx-auto mb-2 text-gray-400" size={28} />
+                  <p className="text-sm text-gray-600">Upload production video</p>
+                  <p className="text-xs text-gray-500 mt-1">MP4, WebM, MOV, AVI (max 100MB)</p>
+                </>
+              )}
             </div>
+            <input ref={videoInputRef} type="file" accept="video/*" onChange={handleVideoUpload} className="hidden" />
           </div>
+
+          {/* Info about hybrid approach */}
+          <div className="bg-blue-50 p-3 rounded border-l-4 border-blue-500 text-xs text-blue-800">
+            <p><strong>🤖 ML-Powered Verification:</strong> Uses rule-based + Isolation Forest anomaly detection for fraud prevention</p>
+          </div>
+
           <button onClick={submit} disabled={submitting} className="w-full bg-green-600 text-white py-3 rounded font-medium hover:bg-green-700 disabled:bg-gray-400">
             {submitting ? 'Recording...' : '📝 Record Production'}
           </button>
@@ -386,7 +849,7 @@ const HaritSwarajMRV = () => {
         <div>
           <label className="block text-sm font-medium mb-1">4-Point Soil Sampling</label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {['P1','P2','P3','P4'].map(p => (
+            {['P1', 'P2', 'P3', 'P4'].map(p => (
               <div key={p}>
                 <label className="text-xs text-gray-600">{p}</label>
                 <select className="w-full border rounded px-2 py-1 text-sm mt-1">
@@ -448,9 +911,8 @@ const HaritSwarajMRV = () => {
               const Icon = moduleIcons[mod] || Home;
               return (
                 <button key={mod} onClick={() => { setActiveModule(mod); setMobileMenuOpen(false); }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded text-sm font-medium ${
-                    activeModule === mod ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'
-                  }`}>
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded text-sm font-medium ${activeModule === mod ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'
+                    }`}>
                   <Icon size={18} />
                   {mod.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
                 </button>
@@ -467,9 +929,8 @@ const HaritSwarajMRV = () => {
               const Icon = moduleIcons[mod] || Home;
               return (
                 <button key={mod} onClick={() => setActiveModule(mod)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded whitespace-nowrap text-sm font-medium ${
-                    activeModule === mod ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}>
+                  className={`flex items-center gap-2 px-4 py-2 rounded whitespace-nowrap text-sm font-medium ${activeModule === mod ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}>
                   <Icon size={16} />
                   {mod.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
                 </button>
