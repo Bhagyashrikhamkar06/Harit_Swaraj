@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Harit Swaraj</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dbeafe 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .icon {
+            width: 80px;
+            height: 80px;
+            background: #16a34a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-center;
+            margin: 0 auto 24px;
+            font-size: 40px;
+        }
+
+        h1 {
+            color: #1f2937;
+            font-size: 28px;
+            margin-bottom: 16px;
+        }
+
+        p {
+            color: #6b7280;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .button {
+            background: #16a34a;
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .button:hover {
+            background: #15803d;
+        }
+
+        .status {
+            margin-top: 24px;
+            padding: 12px;
+            background: #fef3c7;
+            border-radius: 8px;
+            color: #92400e;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="icon">🌱</div>
+        <h1>You're Offline</h1>
+        <p>
+            It looks like you've lost your internet connection.
+            Don't worry, Harit Swaraj works offline!
+            Your data will sync automatically when you're back online.
+        </p>
+        <button class="button" onclick="window.location.reload()">
+            Try Again
+        </button>
+        <div class="status" id="status">
+            ⚠️ No internet connection
+        </div>
+    </div>
+
+    <script>
+        // Check connection status
+        function updateStatus() {
+            const status = document.getElementById('status');
+            if (navigator.onLine) {
+                status.innerHTML = '✅ Connection restored! Reloading...';
+                status.style.background = '#d1fae5';
+                status.style.color = '#065f46';
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                status.innerHTML = '⚠️ No internet connection';
+                status.style.background = '#fef3c7';
+                status.style.color = '#92400e';
+            }
+        }
+
+        // Listen for connection changes
+        window.addEventListener('online', updateStatus);
+        window.addEventListener('offline', updateStatus);
+
+        // Check status on load
+        updateStatus();
+    </script>
+</body>
+
+</html>

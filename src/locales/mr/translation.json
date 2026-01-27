@@ -1,0 +1,97 @@
+{
+    "app_name": "हरित स्वराज",
+    "tagline": "बायोचार MRV आणि कार्बन संचयन",
+    "auth": {
+        "login": "लॉगिन",
+        "register": "नोंदणी",
+        "username": "वापरकर्तानाव",
+        "password": "पासवर्ड",
+        "email": "ईमेल",
+        "full_name": "पूर्ण नाव",
+        "role": "भूमिका",
+        "logout": "लॉगआउट"
+    },
+    "roles": {
+        "farmer": "शेतकरी",
+        "owner": "प्लांट मालक",
+        "auditor": "लेखापरीक्षक",
+        "admin": "प्रशासक"
+    },
+    "dashboard": {
+        "title": "डॅशबोर्ड",
+        "total_biochar": "एकूण बायोचार",
+        "co2_removed": "CO₂ काढले",
+        "active_batches": "सक्रिय बॅच",
+        "pending_audits": "प्रलंबित लेखापरीक्षा",
+        "analytics": "विश्लेषण",
+        "all_data": "सर्व डेटा",
+        "overview": "विहंगावलोकन",
+        "process_status": "प्रक्रिया स्थिती"
+    },
+    "biomass": {
+        "title": "बायोमास ओळख",
+        "plot_id": "प्लॉट आयडी",
+        "type": "बायोमास प्रकार",
+        "species": "प्रजाती",
+        "area": "क्षेत्रफळ (एकर)",
+        "expected_biomass": "अपेक्षित बायोमास (टन)",
+        "register_plot": "प्लॉट नोंदणी करा",
+        "my_plots": "माझे प्लॉट",
+        "all_plots": "सर्व प्लॉट",
+        "kml_upload": "KML फाइल अपलोड",
+        "photos": "जिओटॅग केलेले फोटो (4 आवश्यक)"
+    },
+    "manufacturing": {
+        "title": "उत्पादन रेकॉर्ड",
+        "batch_id": "बॅच आयडी",
+        "biomass_input": "बायोमास इनपुट (किलो)",
+        "biochar_output": "बायोचार आउटपुट (किलो)",
+        "kiln_type": "भट्टी प्रकार",
+        "species": "प्रजाती (पर्यायी)",
+        "video": "प्रक्रिया व्हिडिओ (पर्यायी)",
+        "record_batch": "बॅच रेकॉर्ड करा",
+        "my_batches": "माझे बॅच",
+        "all_batches": "सर्व बॅच"
+    },
+    "status": {
+        "verified": "सत्यापित",
+        "pending": "प्रलंबित",
+        "flagged": "चिन्हांकित",
+        "suspicious": "संशयास्पद",
+        "locked": "लॉक केलेले"
+    },
+    "blockchain": {
+        "certificate": "प्रमाणपत्र",
+        "mint_certificate": "प्रमाणपत्र जारी करा",
+        "view_certificate": "प्रमाणपत्र पहा",
+        "tx_hash": "व्यवहार हॅश",
+        "token_id": "टोकन आयडी",
+        "explorer": "एक्सप्लोररवर पहा"
+    },
+    "cv": {
+        "quality_score": "गुणवत्ता स्कोअर",
+        "gps_found": "GPS सापडला",
+        "no_gps": "GPS डेटा नाही",
+        "warnings": "चेतावणी",
+        "biochar_detected": "बायोचार आढळला"
+    },
+    "common": {
+        "loading": "लोड होत आहे...",
+        "submit": "सबमिट करा",
+        "cancel": "रद्द करा",
+        "save": "जतन करा",
+        "delete": "हटवा",
+        "edit": "संपादित करा",
+        "view": "पहा",
+        "search": "शोधा",
+        "filter": "फिल्टर",
+        "export": "निर्यात",
+        "refresh": "रिफ्रेश करा"
+    },
+    "messages": {
+        "success": "यशस्वी!",
+        "error": "त्रुटी",
+        "offline": "तुम्ही ऑफलाइन आहात. कनेक्शन पुनर्संचयित झाल्यावर डेटा समक्रमित होईल.",
+        "install_app": "ऑफलाइन प्रवेशासाठी हरित स्वराज अॅप इंस्टॉल करा"
+    }
+}

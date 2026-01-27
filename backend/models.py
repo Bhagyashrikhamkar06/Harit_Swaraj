@@ -50,6 +50,15 @@ class PlotPhoto(Base):
     photo_index = Column(Integer, nullable=False)  # 0-3 for the 4 required photos
     created_at = Column(DateTime, default=datetime.utcnow)
     
+    # Computer Vision Analysis Fields (Phase 2)
+    cv_analysis = Column(JSON)  # Full CV analysis results
+    quality_score = Column(Float)  # 0-1 overall quality score
+    has_gps = Column(Integer, default=0)  # Boolean as integer (0/1)
+    gps_latitude = Column(Float)
+    gps_longitude = Column(Float)
+    photo_timestamp = Column(DateTime)  # From EXIF
+    perceptual_hash = Column(String(64))  # For duplicate detection
+    
     # Relationships
     plot = relationship("Plot", back_populates="photos")
 
@@ -70,6 +79,13 @@ class ManufacturingBatch(Base):
     video_path = Column(String(255))
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Blockchain Certificate Fields (Phase 2)
+    blockchain_tx_hash = Column(String(100))  # Ethereum transaction hash
+    certificate_token_id = Column(Integer)  # NFT token ID
+    certificate_ipfs_hash = Column(String(100))  # IPFS metadata hash
+    blockchain_status = Column(String(20), default='pending')  # 'pending', 'minted', 'failed'
+    qr_code_path = Column(String(255))  # Path to QR code image
     
     # Relationships
     user = relationship("User", back_populates="batches")

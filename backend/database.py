@@ -42,4 +42,4 @@ def init_db():
     """
     from models import User, Plot, PlotPhoto, ManufacturingBatch, Application
     Base.metadata.create_all(bind=engine)
-    print("✅ Database initialized successfully")
+    print("[OK] Database initialized successfully")

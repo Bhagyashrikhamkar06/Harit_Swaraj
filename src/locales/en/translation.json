@@ -1,0 +1,97 @@
+{
+    "app_name": "Harit Swaraj",
+    "tagline": "Biochar MRV & Carbon Sequestration",
+    "auth": {
+        "login": "Login",
+        "register": "Register",
+        "username": "Username",
+        "password": "Password",
+        "email": "Email",
+        "full_name": "Full Name",
+        "role": "Role",
+        "logout": "Logout"
+    },
+    "roles": {
+        "farmer": "Farmer",
+        "owner": "Plant Owner",
+        "auditor": "Auditor",
+        "admin": "Administrator"
+    },
+    "dashboard": {
+        "title": "Dashboard",
+        "total_biochar": "Total Biochar",
+        "co2_removed": "CO₂ Removed",
+        "active_batches": "Active Batches",
+        "pending_audits": "Pending Audits",
+        "analytics": "Analytics",
+        "all_data": "All Data",
+        "overview": "Overview",
+        "process_status": "Process Status"
+    },
+    "biomass": {
+        "title": "Biomass Identification",
+        "plot_id": "Plot ID",
+        "type": "Biomass Type",
+        "species": "Species",
+        "area": "Area (acres)",
+        "expected_biomass": "Expected Biomass (tons)",
+        "register_plot": "Register Plot",
+        "my_plots": "My Plots",
+        "all_plots": "All Plots",
+        "kml_upload": "KML File Upload",
+        "photos": "Geotagged Photos (4 required)"
+    },
+    "manufacturing": {
+        "title": "Manufacturing Record",
+        "batch_id": "Batch ID",
+        "biomass_input": "Biomass Input (kg)",
+        "biochar_output": "Biochar Output (kg)",
+        "kiln_type": "Kiln Type",
+        "species": "Species (Optional)",
+        "video": "Process Video (Optional)",
+        "record_batch": "Record Batch",
+        "my_batches": "My Batches",
+        "all_batches": "All Batches"
+    },
+    "status": {
+        "verified": "Verified",
+        "pending": "Pending",
+        "flagged": "Flagged",
+        "suspicious": "Suspicious",
+        "locked": "Locked"
+    },
+    "blockchain": {
+        "certificate": "Certificate",
+        "mint_certificate": "Mint Certificate",
+        "view_certificate": "View Certificate",
+        "tx_hash": "Transaction Hash",
+        "token_id": "Token ID",
+        "explorer": "View on Explorer"
+    },
+    "cv": {
+        "quality_score": "Quality Score",
+        "gps_found": "GPS Found",
+        "no_gps": "No GPS Data",
+        "warnings": "Warnings",
+        "biochar_detected": "Biochar Detected"
+    },
+    "common": {
+        "loading": "Loading...",
+        "submit": "Submit",
+        "cancel": "Cancel",
+        "save": "Save",
+        "delete": "Delete",
+        "edit": "Edit",
+        "view": "View",
+        "search": "Search",
+        "filter": "Filter",
+        "export": "Export",
+        "refresh": "Refresh"
+    },
+    "messages": {
+        "success": "Success!",
+        "error": "Error",
+        "offline": "You are offline. Data will sync when connection is restored.",
+        "install_app": "Install Harit Swaraj app for offline access"
+    }
+}

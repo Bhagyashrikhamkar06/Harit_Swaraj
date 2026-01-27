@@ -20,8 +20,12 @@ from auth import (
     get_current_user, require_role
 )
 from file_storage import save_photo, save_video, save_kml, get_file_path, UPLOAD_DIR
-from ml.manufacturing_anomaly import get_anomaly_detector
-from ml.plot_verification import get_plot_verifier
+try:
+    from ml.manufacturing_anomaly import get_anomaly_detector
+    from ml.plot_verification import get_plot_verifier
+except ImportError as e:
+    print(f"⚠️ ML libraries not found ({e}). Using mock models.")
+    from ml.mock_ml import get_anomaly_detector, get_plot_verifier
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -30,10 +34,15 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS middleware
+# CORS middleware - Allow frontend to connect
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify exact origins
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:3001",
+        "*"  # Allow all for development
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -88,7 +97,7 @@ async def startup_event():
             ]
             db.add_all(default_users)
             db.commit()
-            print("✅ Default users created")
+            print("[OK] Default users created")
     finally:
         db.close()
 
@@ -248,10 +257,10 @@ async def register_plot(
     species: str = Form(...),
     area: float = Form(...),
     expected_biomass: float = Form(...),
-    photo_0: UploadFile = File(...),
-    photo_1: UploadFile = File(...),
-    photo_2: UploadFile = File(...),
-    photo_3: UploadFile = File(...),
+    photo_0: UploadFile = File(None),
+    photo_1: UploadFile = File(None),
+    photo_2: UploadFile = File(None),
+    photo_3: UploadFile = File(None),
     kml_file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -277,6 +286,9 @@ async def register_plot(
     
     # Save KML file and run verification
     kml_path = await save_kml(kml_file, plot_id)
+    
+    # Reset cursor position before reading again
+    await kml_file.seek(0)
     
     # Read KML content for verification
     kml_content = await kml_file.read()
@@ -305,16 +317,61 @@ async def register_plot(
     db.commit()
     db.refresh(new_plot)
     
-    # Save photos
+    # Save photos with CV analysis
     photos = [photo_0, photo_1, photo_2, photo_3]
+    existing_hashes = []  # For duplicate detection
+    
     for idx, photo in enumerate(photos):
         photo_path = await save_photo(photo, plot_id, idx)
         
-        plot_photo = PlotPhoto(
-            plot_id=new_plot.id,
-            photo_path=photo_path,
-            photo_index=idx
-        )
+        # Run CV analysis
+        try:
+            from cv.cv_analyzer import analyze_photo
+            full_path = get_file_path(photo_path)
+            cv_result = analyze_photo(full_path, existing_hashes)
+            
+            # Add hash to existing list for next photo
+            if cv_result.get('perceptual_hash'):
+                existing_hashes.append(cv_result['perceptual_hash'])
+            
+            # Parse timestamp if present
+            photo_ts = None
+            if cv_result.get('timestamp'):
+                try:
+                    from datetime import datetime
+                    if isinstance(cv_result['timestamp'], str):
+                        photo_ts = datetime.fromisoformat(cv_result['timestamp'].replace('Z', '+00:00'))
+                except:
+                    pass
+            
+            plot_photo = PlotPhoto(
+                plot_id=new_plot.id,
+                photo_path=photo_path,
+                photo_index=idx,
+                cv_analysis=cv_result,
+                quality_score=cv_result.get('quality_score', 0.0),
+                has_gps=1 if cv_result.get('has_gps') else 0,
+                gps_latitude=cv_result.get('gps_coordinates', [None, None])[0],
+                gps_longitude=cv_result.get('gps_coordinates', [None, None])[1],
+                photo_timestamp=photo_ts,
+                perceptual_hash=cv_result.get('perceptual_hash')
+            )
+            
+            # Flag plot if quality is too low or duplicate found
+            if cv_result.get('quality_score', 1.0) < 0.5:
+                new_plot.status = 'suspicious'
+            if cv_result.get('is_duplicate'):
+                new_plot.status = 'suspicious'
+                
+        except Exception as e:
+            print(f"⚠️ CV analysis failed for photo {idx}: {e}")
+            # Still save photo without CV analysis
+            plot_photo = PlotPhoto(
+                plot_id=new_plot.id,
+                photo_path=photo_path,
+                photo_index=idx
+            )
+        
         db.add(plot_photo)
     
     db.commit()
@@ -609,6 +666,157 @@ async def get_dashboard_summary(
         "total_plots": total_plots,
         "verified_plots": verified_plots
     }
+
+# ============ BLOCKCHAIN CERTIFICATE ENDPOINTS ============
+
+@app.post("/blockchain/mint-certificate/{batch_id}")
+async def mint_blockchain_certificate(
+    batch_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Mint blockchain NFT certificate for verified batch
+    Requires: admin or owner role
+    """
+    # Check role
+    if current_user.role not in ['admin', 'owner']:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins and owners can mint certificates"
+        )
+    
+    # Get batch
+    batch = db.query(ManufacturingBatch).filter(ManufacturingBatch.batch_id == batch_id).first()
+    if not batch:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Batch {batch_id} not found"
+        )
+    
+    # Check if batch is verified
+    if batch.status != 'verified':
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only verified batches can receive certificates"
+        )
+    
+    # Check if already minted
+    if batch.blockchain_tx_hash:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Certificate already minted for this batch"
+        )
+    
+    try:
+        from blockchain.blockchain_service import mint_certificate, generate_qr_code
+        
+        # Prepare metadata
+        metadata = {
+            "batch_id": batch.batch_id,
+            "biomass_input": batch.biomass_input,
+            "biochar_output": batch.biochar_output,
+            "co2_removed": batch.co2_removed,
+            "kiln_type": batch.kiln_type,
+            "timestamp": batch.created_at.isoformat(),
+            "issuer": "Harit Swaraj MRV",
+            "standard": "Biochar Carbon Removal"
+        }
+        
+        # Mint certificate
+        tx_hash, token_id, ipfs_hash = mint_certificate(
+            batch_id=batch.batch_id,
+            co2_removed=batch.co2_removed,
+            metadata=metadata
+        )
+        
+        # Generate QR code
+        qr_dir = os.path.join(UPLOAD_DIR, 'qr_codes')
+        os.makedirs(qr_dir, exist_ok=True)
+        qr_path = os.path.join(qr_dir, f"{batch_id}_qr.png")
+        generate_qr_code(tx_hash, qr_path)
+        qr_relative_path = f"qr_codes/{batch_id}_qr.png"
+        
+        # Update batch
+        batch.blockchain_tx_hash = tx_hash
+        batch.certificate_token_id = token_id
+        batch.certificate_ipfs_hash = ipfs_hash
+        batch.blockchain_status = 'minted'
+        batch.qr_code_path = qr_relative_path
+        
+        db.commit()
+        
+        return {
+            "message": "Certificate minted successfully",
+            "tx_hash": tx_hash,
+            "token_id": token_id,
+            "ipfs_hash": ipfs_hash,
+            "qr_code": f"/uploads/{qr_relative_path}",
+            "explorer_url": f"https://mumbai.polygonscan.com/tx/{tx_hash}"
+        }
+    
+    except Exception as e:
+        batch.blockchain_status = 'failed'
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Certificate minting failed: {str(e)}"
+        )
+
+@app.get("/blockchain/certificate/{batch_id}")
+async def get_certificate_details(
+    batch_id: str,
+    db: Session = Depends(get_db)
+):
+    """Get certificate details for a batch"""
+    batch = db.query(ManufacturingBatch).filter(ManufacturingBatch.batch_id == batch_id).first()
+    
+    if not batch:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Batch {batch_id} not found"
+        )
+    
+    if not batch.blockchain_tx_hash:
+        return {
+            "has_certificate": False,
+            "blockchain_status": batch.blockchain_status
+        }
+    
+    return {
+        "has_certificate": True,
+        "batch_id": batch.batch_id,
+        "tx_hash": batch.blockchain_tx_hash,
+        "token_id": batch.certificate_token_id,
+        "ipfs_hash": batch.certificate_ipfs_hash,
+        "blockchain_status": batch.blockchain_status,
+        "qr_code": f"/uploads/{batch.qr_code_path}" if batch.qr_code_path else None,
+        "explorer_url": f"https://mumbai.polygonscan.com/tx/{batch.blockchain_tx_hash}",
+        "co2_removed": batch.co2_removed,
+        "created_at": batch.created_at
+    }
+
+@app.get("/blockchain/verify/{tx_hash}")
+async def verify_blockchain_certificate(tx_hash: str):
+    """Verify certificate authenticity on blockchain"""
+    try:
+        from blockchain.blockchain_service import verify_certificate
+        
+        result = verify_certificate(tx_hash)
+        
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Certificate not found on blockchain"
+            )
+        
+        return result
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Verification failed: {str(e)}"
+        )
 
 # ============ ROOT ENDPOINT ============
 

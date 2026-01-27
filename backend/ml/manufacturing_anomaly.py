@@ -65,10 +65,10 @@ class ManufacturingAnomalyDetector:
                 self.model = pickle.load(f)
             with open(self.scaler_path, 'rb') as f:
                 self.scaler = pickle.load(f)
-            print(f"✅ Loaded pre-trained model from {self.model_path}")
+            print(f"[OK] Loaded pre-trained model from {self.model_path}")
         except FileNotFoundError:
             # Create initial model with synthetic training data
-            print("⚠️  Model not found. Training with synthetic data...")
+            print("[WARNING] Model not found. Training with synthetic data...")
             self._train_initial_model()
     
     def _train_initial_model(self):
@@ -115,7 +115,7 @@ class ManufacturingAnomalyDetector:
         with open(self.scaler_path, 'wb') as f:
             pickle.dump(self.scaler, f)
         
-        print(f"✅ Trained and saved model to {self.model_path}")
+        print(f"[OK] Trained and saved model to {self.model_path}")
     
     def encode_kiln_type(self, kiln_type: str) -> int:
         """Encode categorical kiln type to numerical value"""

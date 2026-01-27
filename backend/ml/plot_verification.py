@@ -38,9 +38,9 @@ class PlotVerifier:
         try:
             with open(model_path, 'rb') as f:
                 self.area_detector = pickle.load(f)
-            print("✅ Area detector model loaded")
+            print("[OK] Area detector model loaded")
         except FileNotFoundError:
-            print("⚠️ No existing model found, training initial model...")
+            print("[WARNING] No existing model found, training initial model...")
             self._train_initial_models()
     
     def _train_initial_models(self):
@@ -63,7 +63,7 @@ class PlotVerifier:
         with open(model_path, 'wb') as f:
             pickle.dump(self.area_detector, f)
         
-        print("✅ Initial area detector model trained and saved")
+        print("[OK] Initial area detector model trained and saved")
     
     def parse_kml(self, kml_content: str) -> Optional[Polygon]:
         """

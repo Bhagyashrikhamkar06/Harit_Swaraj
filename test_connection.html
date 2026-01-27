@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>Harit Swaraj API Connection Test</h1>
+    <button onclick="testConnection()">Test Backend Connection</button>
+    <button onclick="testLogin()">Test Login</button>
+    <div id="result" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;"></div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:8000';
+
+        async function testConnection() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing connection...';
+            
+            try {
+                const response = await fetch(`${API_URL}/`);
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <h3 style="color: green;">✅ Connection Successful!</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3 style="color: red;">❌ Connection Failed!</h3>
+                    <p>Error: ${error.message}</p>
+                    <p>Make sure backend is running on port 8000</p>
+                `;
+            }
+        }
+
+        async function testLogin() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing login...';
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'farmer1',
+                        password: 'farmer123'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <h3 style="color: green;">✅ Login Successful!</h3>
+                        <p>User: ${data.user.username}</p>
+                        <p>Role: ${data.user.role}</p>
+                        <p>Token: ${data.access_token.substring(0, 50)}...</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <h3 style="color: orange;">⚠️ Login Failed</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3 style="color: red;">❌ Request Failed!</h3>
+                    <p>Error: ${error.message}</p>
+                    <p>This is the same error you're seeing in the React app</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
