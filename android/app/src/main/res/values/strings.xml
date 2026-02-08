@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Harit Swaraj</string>
+    <string name="title_activity_main">Harit Swaraj</string>
+    <string name="package_name">com.haritswaraj.app</string>
+    <string name="custom_url_scheme">com.haritswaraj.app</string>
+</resources>

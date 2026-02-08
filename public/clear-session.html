@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Session - Harit Swaraj</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dbeafe 100%);
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+        }
+
+        h1 {
+            color: #16a34a;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        button {
+            background: #16a34a;
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 0.5rem;
+        }
+
+        button:hover {
+            background: #15803d;
+        }
+
+        .success {
+            color: #16a34a;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔄 Reset Harit Swaraj Session</h1>
+        <p>Click the button below to clear your session and return to the login page.</p>
+        <button onclick="clearSession()">Clear Session & Logout</button>
+        <button onclick="goToApp()">Go to App</button>
+        <p class="success" id="success">✅ Session cleared! Redirecting to login page...</p>
+    </div>
+
+    <script>
+        function clearSession() {
+            // Clear all localStorage
+            localStorage.clear();
+
+            // Clear all sessionStorage
+            sessionStorage.clear();
+
+            // Show success message
+            document.getElementById('success').style.display = 'block';
+
+            // Redirect to main app after 1 second
+            setTimeout(() => {
+                window.location.href = 'http://localhost:3000';
+            }, 1000);
+        }
+
+        function goToApp() {
+            window.location.href = 'http://localhost:3000';
+        }
+    </script>
+</body>
+
+</html>
