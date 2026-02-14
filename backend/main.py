@@ -20,12 +20,12 @@ from auth import (
     get_current_user, require_role
 )
 from file_storage import save_photo, save_video, save_kml, get_file_path, UPLOAD_DIR
-try:
-    from ml.manufacturing_anomaly import get_anomaly_detector
-    from ml.plot_verification import get_plot_verifier
-except ImportError as e:
-    print(f"⚠️ ML libraries not found ({e}). Using mock models.")
-    from ml.mock_ml import get_anomaly_detector, get_plot_verifier
+# try:
+#     from ml.manufacturing_anomaly import get_anomaly_detector
+#     from ml.plot_verification import get_plot_verifier
+# except ImportError as e:
+#     print(f"⚠️ ML libraries not found ({e}). Using mock models.")
+from ml.mock_ml import get_anomaly_detector, get_plot_verifier
 
 # Initialize FastAPI app
 app = FastAPI(
