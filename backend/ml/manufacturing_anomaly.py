@@ -17,13 +17,17 @@ Why Rule-Based + ML Hybrid?
 - Together: Better fraud prevention
 """
 
-import numpy as np
-import json
-from datetime import datetime
-from pathlib import Path
-from sklearn.ensemble import IsolationForest
-from sklearn.preprocessing import StandardScaler
-import pickle
+try:
+    import numpy as np
+    import json
+    from datetime import datetime
+    from pathlib import Path
+    from sklearn.ensemble import IsolationForest
+    from sklearn.preprocessing import StandardScaler
+    import pickle
+except ImportError as e:
+    # Re-raise the error so main.py can catch it and load mock models
+    raise ImportError(f"Missing ML dependency: {e}") from e
 
 
 class ManufacturingAnomalyDetector:

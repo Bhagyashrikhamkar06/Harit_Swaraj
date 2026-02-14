@@ -9,17 +9,20 @@ Methods:
 4. Spatial Clustering (DBSCAN)
 """
 
-import numpy as np
-import pickle
-import os
-from datetime import datetime
-from typing import Dict, List, Tuple, Optional
-from shapely.geometry import Polygon, Point
-from shapely.ops import unary_union
-from scipy.spatial.distance import directed_hausdorff
-from sklearn.ensemble import IsolationForest
-from sklearn.cluster import DBSCAN
-import xml.etree.ElementTree as ET
+try:
+    import numpy as np
+    import pickle
+    import os
+    from datetime import datetime
+    from typing import Dict, List, Tuple, Optional
+    from shapely.geometry import Polygon, Point
+    from shapely.ops import unary_union
+    from scipy.spatial.distance import directed_hausdorff
+    from sklearn.ensemble import IsolationForest
+    from sklearn.cluster import DBSCAN
+    import xml.etree.ElementTree as ET
+except ImportError as e:
+    raise ImportError(f"Missing ML dependency: {e}") from e
 
 
 class PlotVerifier:
