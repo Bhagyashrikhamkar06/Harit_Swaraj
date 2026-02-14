@@ -35,18 +35,27 @@ app = FastAPI(
 )
 
 # CORS middleware - Allow frontend to connect
+import os
+
+# Get allowed origins from environment variable or use defaults
+ALLOWED_ORIGINS = os.getenv("CORS_ORIGINS", "").split(",") if os.getenv("CORS_ORIGINS") else [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://0.0.0.0:3000",
+]
+
+# In production, add your deployed frontend URL
+# Example: CORS_ORIGINS=https://harit-swaraj.vercel.app,https://harit-swaraj.netlify.app
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001",
-        "*"  # Allow all for development
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # Initialize ML models at startup
 anomaly_detector = get_anomaly_detector()
@@ -98,6 +107,9 @@ async def startup_event():
             db.add_all(default_users)
             db.commit()
             print("[OK] Default users created")
+    except Exception as e:
+        print(f"⚠️ Error initializing database content: {e}")
+        # Don't crash the app
     finally:
         db.close()
 
