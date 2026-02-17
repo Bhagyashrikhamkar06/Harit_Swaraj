@@ -1,11 +1,17 @@
 [build]
 builder = "nixpacks"
-# Combine installation and build in one command to ensure everything is ready
-buildCommand = "npm config set legacy-peer-deps true && npm install && npm run build && cd backend && pip install -r requirements.txt"
+# Explicitly use python3 and python3-pip
+ # Nixpacks usually provides python3
+buildCommand = "npm config set legacy-peer-deps true && npm install && npm run build && cd backend && python3 -m pip install -r requirements.txt"
 
 [deploy]
-# Use uvicorn directly, usually in the path after pip install
-startCommand = "cd backend && uvicorn share:app --host 0.0.0.0 --port $PORT"
+startCommand = "cd backend && python3 -m uvicorn share:app --host 0.0.0.0 --port $PORT"
 restartPolicyType = "ON_FAILURE"
 
-# Remove all custom [nixpacks] sections to let Railway auto-detect environment
+[nixpacks]
+# Force both node and python providers to ensure tools are available
+providers = ["node", "python"]
+
+[phases.setup]
+# Ensure python3 and pip are installed
+nixPkgs = ["nodejs_18", "python310", "python310Packages.pip"]
