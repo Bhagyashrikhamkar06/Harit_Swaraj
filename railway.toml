@@ -20,7 +20,7 @@ nixPkgs = ["python311", "nodejs_20", "gcc"]
 [phases.install]
 cmds = [
     "cd backend && pip install -r requirements.txt",
-    "npm install"
+    "npm install --legacy-peer-deps"
 ]
 
 [phases.build]
