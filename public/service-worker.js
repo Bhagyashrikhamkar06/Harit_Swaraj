@@ -48,46 +48,64 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    event.respondWith(
-        caches.match(event.request)
-            .then((cachedResponse) => {
-                // Return cached response if found
-                if (cachedResponse) {
-                    return cachedResponse;
-                }
+    const isApiRequest = event.request.url.includes('/api/');
 
-                // Otherwise fetch from network
-                return fetch(event.request)
-                    .then((response) => {
-                        // Don't cache non-successful responses
-                        if (!response || response.status !== 200 || response.type === 'error') {
-                            return response;
-                        }
-
-                        // Clone response to cache it
+    if (isApiRequest) {
+        // Network First Strategy for API calls: content must be fresh
+        event.respondWith(
+            fetch(event.request)
+                .then((response) => {
+                    // If network fetch succeeds, cache the fresh data
+                    if (response && response.status === 200 && response.type !== 'error') {
                         const responseToCache = response.clone();
+                        caches.open(CACHE_NAME).then((cache) => {
+                            cache.put(event.request, responseToCache);
+                        });
+                    }
+                    return response;
+                })
+                .catch(() => {
+                    // If network fails (offline), try to return cached data
+                    return caches.match(event.request);
+                })
+        );
+    } else {
+        // Cache First Strategy for static assets (images, css, js)
+        event.respondWith(
+            caches.match(event.request)
+                .then((cachedResponse) => {
+                    // Return cached response if found
+                    if (cachedResponse) {
+                        return cachedResponse;
+                    }
 
-                        // Cache API responses and static assets
-                        if (event.request.url.includes('/api/') ||
-                            event.request.url.includes('.js') ||
-                            event.request.url.includes('.css') ||
-                            event.request.url.includes('.png') ||
-                            event.request.url.includes('.jpg')) {
+                    // Otherwise fetch from network
+                    return fetch(event.request)
+                        .then((response) => {
+                            // Don't cache non-successful responses
+                            if (!response || response.status !== 200 || response.type === 'error') {
+                                return response;
+                            }
+
+                            // Clone response to cache it
+                            const responseToCache = response.clone();
+
+                            // Cache static assets
                             caches.open(CACHE_NAME).then((cache) => {
                                 cache.put(event.request, responseToCache);
                             });
-                        }
 
-                        return response;
-                    })
-                    .catch(() => {
-                        // If both cache and network fail, show offline page
-                        if (event.request.mode === 'navigate') {
-                            return caches.match('/offline.html');
-                        }
-                    });
-            })
-    );
+                            return response;
+                        })
+                        .catch(() => {
+                            // If both cache and network fail, show offline page
+                            if (event.request.mode === 'navigate') {
+                                return caches.match('/offline.html');
+                            }
+                        });
+                })
+        );
+    }
 });
 
 // Background sync for offline form submissions

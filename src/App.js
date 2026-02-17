@@ -1,8 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Upload, CheckCircle, AlertTriangle, Users, Leaf, Factory, TrendingUp, Menu, X, Home, FileText, Truck, Droplet, MapPin, ClipboardCheck, Flame, Package, Camera, Trash2, Check, LogOut, LogIn, BarChart3, Database, Globe, Wifi, WifiOff, Download, Award } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
-const API_URL = process.env.REACT_APP_API_URL || '';
+import BiomassIdView from './components/BiomassIdView';
+import BiomassHarvestView from './components/BiomassHarvestView';
+import TransportView from './components/TransportView';
+import DistributionView from './components/DistributionView';
+import Sidebar from './components/Sidebar';
+import { Toast, LoadingSpinner, EmptyState, WelcomeCard, SuccessAnimation } from './components/UXComponents';
+// Dynamic API URL: Use localhost in dev, relative path in prod (when served by backend)
+const API_URL = process.env.NODE_ENV === 'development'
+  ? 'http://localhost:8000'
+  : '';
 
 
 const HaritSwarajMRV = () => {
@@ -28,6 +36,9 @@ const HaritSwarajMRV = () => {
   // Data state - now fetched from backend
   const [biomassPlots, setBiomassPlots] = useState([]);
   const [biocharBatches, setBiocharBatches] = useState([]);
+  const [harvests, setHarvests] = useState([]);
+  const [transports, setTransports] = useState([]);
+  const [distributions, setDistributions] = useState([]);
   const [dashboardStats, setDashboardStats] = useState(null);
 
   // Form state for Biomass ID
@@ -48,8 +59,38 @@ const HaritSwarajMRV = () => {
     biochar_output: '',
     kiln_type: 'Batch Retort Kiln',
     species: '',
-    video: null
+    video: null,
+    photo: null
   });
+
+  // UX Enhancement State
+  const [toast, setToast] = useState(null);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  // Show toast notification
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  // Show success animation
+  const showSuccessAnimation = (message) => {
+    setSuccessMessage(message);
+    setShowSuccess(true);
+  };
+
+  // Check if first time user
+  useEffect(() => {
+    if (isAuthenticated && currentUser) {
+      const hasSeenWelcome = localStorage.getItem(`welcome_seen_${currentUser.id}`);
+      if (!hasSeenWelcome) {
+        setShowWelcome(true);
+      }
+    }
+  }, [isAuthenticated, currentUser]);
 
   // Check for existing token on mount
   useEffect(() => {
@@ -78,6 +119,13 @@ const HaritSwarajMRV = () => {
     };
   }, []);
 
+  // Handle window resize for mobile detection
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Online/offline listeners
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -98,6 +146,9 @@ const HaritSwarajMRV = () => {
       fetchDashboardData();
       fetchPlots();
       fetchBatches();
+      fetchHarvests();
+      fetchTransports();
+      fetchDistributions();
     }
   }, [isAuthenticated, token]);
 
@@ -109,7 +160,10 @@ const HaritSwarajMRV = () => {
 
     const response = await fetch(`${API_URL}${url}`, {
       ...options,
-      headers
+      headers: {
+        ...headers,
+        'ngrok-skip-browser-warning': '69420'
+      }
     });
 
     if (response.status === 401) {
@@ -151,6 +205,52 @@ const HaritSwarajMRV = () => {
     }
   };
 
+  const fetchHarvests = async () => {
+    try {
+      const res = await fetchWithAuth('/harvest/list');
+      const data = await res.json();
+      setHarvests(data);
+    } catch (err) {
+      console.error('Error fetching harvests:', err);
+    }
+  };
+
+  const fetchTransports = async () => {
+    try {
+      const res = await fetchWithAuth('/transport/list');
+      const data = await res.json();
+      setTransports(data);
+    } catch (err) {
+      console.error('Error fetching transports:', err);
+    }
+  };
+
+  const fetchDistributions = async () => {
+    try {
+      const res = await fetchWithAuth('/distribution/list');
+      const data = await res.json();
+      setDistributions(data);
+    } catch (err) {
+      console.error('Error fetching distributions:', err);
+    }
+  };
+
+  const handleDeleteDistribution = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this distribution record?')) return;
+    try {
+      const res = await fetchWithAuth(`/distribution/distributions/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        showToast('Distribution record deleted successfully', 'success');
+        fetchDistributions();
+      } else {
+        const error = await res.json();
+        showToast(error.detail || 'Failed to delete distribution', 'error');
+      }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -158,6 +258,40 @@ const HaritSwarajMRV = () => {
     setCurrentUser(null);
     setIsAuthenticated(false);
     setActiveModule('dashboard');
+  };
+
+  const handleDeletePlot = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this plot? This action cannot be undone.')) return;
+    try {
+      const res = await fetchWithAuth(`/biomass/plots/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        showToast('Plot deleted successfully', 'success');
+        fetchPlots();
+        fetchDashboardData();
+      } else {
+        const error = await res.json();
+        showToast(error.detail || 'Failed to delete plot', 'error');
+      }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  const handleDeleteBatch = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this batch? This will affect your total carbon sequestered stats.')) return;
+    try {
+      const res = await fetchWithAuth(`/manufacturing/batches/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        showToast('Batch deleted successfully', 'success');
+        fetchBatches();
+        fetchDashboardData();
+      } else {
+        const error = await res.json();
+        showToast(error.detail || 'Failed to delete batch', 'error');
+      }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   };
 
   // PWA install handler
@@ -180,16 +314,19 @@ const HaritSwarajMRV = () => {
   };
 
   const modules = {
-    owner: ['dashboard', 'biomass-id', 'manufacturing', 'my-plots', 'my-batches'],
-    farmer: ['dashboard', 'biomass-id', 'my-plots'],
+    owner: ['dashboard', 'biomass-id', 'harvest', 'transport', 'manufacturing', 'distribution', 'my-plots', 'my-batches'],
+    farmer: ['dashboard', 'biomass-id', 'harvest', 'my-plots'],
     auditor: ['dashboard', 'all-plots', 'all-batches'],
-    admin: ['dashboard', 'all-plots', 'all-batches', 'analytics']
+    admin: ['dashboard', 'all-plots', 'harvest', 'transport', 'manufacturing', 'distribution', 'all-batches', 'analytics']
   };
 
   const moduleIcons = {
     dashboard: Home,
     'biomass-id': MapPin,
+    harvest: Leaf,
+    transport: Truck,
     manufacturing: Factory,
+    distribution: Globe,
     'my-plots': Leaf,
     'my-batches': Package,
     'all-plots': MapPin,
@@ -200,7 +337,10 @@ const HaritSwarajMRV = () => {
   const moduleLabels = {
     dashboard: t('dashboard.title'),
     'biomass-id': t('biomass.title'),
+    harvest: 'Biomass Harvest',
+    transport: 'Transportation',
     manufacturing: t('manufacturing.title'),
+    distribution: 'Distribution & Application',
     'my-plots': t('biomass.my_plots'),
     'my-batches': t('manufacturing.my_batches'),
     'all-plots': t('biomass.all_plots'),
@@ -391,11 +531,44 @@ const HaritSwarajMRV = () => {
   const DashboardView = () => {
     const [selectedBatch, setSelectedBatch] = useState(null);
     const [showBatchModal, setShowBatchModal] = useState(false);
+    const [fetchError, setFetchError] = useState(null);
+
+    // Effect to handle fetch errors from parent or self
+    useEffect(() => {
+      if (!dashboardStats) {
+        // Retry fetch if not loaded? Or assume parent fetched?
+        // Actually, parent fetches. If parent failed, dashboardStats is null.
+        // We should check if parent is loading?
+        // Parent has 'loading' state but doesn't pass it.
+        // Let's rely on dashboardStats being null.
+        const timer = setTimeout(() => {
+          if (!dashboardStats) setFetchError("Loading timeout. Check connection.");
+        }, 10000);
+        return () => clearTimeout(timer);
+      }
+    }, [dashboardStats]);
+
+    if (fetchError && !dashboardStats) {
+      return (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <AlertTriangle size={48} className="text-red-500 mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900">Failed to load dashboard</h3>
+          <p className="text-gray-600 mb-4">{fetchError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg"
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
 
     if (!dashboardStats) {
       return (
-        <div className="flex items-center justify-center py-20">
-          <div className="spinner"></div>
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="spinner mb-4"></div>
+          <p className="text-gray-500">Loading dashboard...</p>
         </div>
       );
     }
@@ -487,11 +660,15 @@ const HaritSwarajMRV = () => {
               </div>
 
               {biomassPlots.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 rounded-lg">
-                  <MapPin size={48} className="mx-auto text-gray-400 mb-3" />
-                  <p className="text-gray-600">No biomass plots registered yet</p>
-                  <p className="text-sm text-gray-500 mt-1">Register your first plot to start tracking</p>
-                </div>
+                <EmptyState
+                  icon={MapPin}
+                  title="No biomass plots registered yet"
+                  description="Start your carbon removal journey by registering your first biomass plot. Upload photos, add location details, and track your contribution to climate action."
+                  actionText="Register First Plot"
+                  onAction={() => setActiveModule('biomass-id')}
+                  secondaryActionText="Learn More"
+                  onSecondaryAction={() => window.open('https://docs.haritswaraj.com', '_blank')}
+                />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {biomassPlots.map(plot => (
@@ -518,16 +695,29 @@ const HaritSwarajMRV = () => {
                           <span className="text-gray-600">Expected Biomass:</span>
                           <span className="font-medium">{plot.expected_biomass} tons</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Registered:</span>
-                          <span className="font-medium">{new Date(plot.created_at).toLocaleDateString()}</span>
-                        </div>
-                        {plot.photo_count > 0 && (
-                          <div className="flex items-center gap-1 text-gray-600">
-                            <Camera size={14} />
-                            <span>{plot.photo_count} photos</span>
+
+                        {plot.photos && plot.photos.length > 0 && (
+                          <div className="mt-3">
+                            <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                              <Camera size={12} /> Registered Photos:
+                            </p>
+                            <div className="flex gap-2 overflow-x-auto pb-2">
+                              {plot.photos.map((photo, pIdx) => (
+                                <img
+                                  key={pIdx}
+                                  src={`${API_URL}/uploads/${photo.photo_path.split('/').pop()}`}
+                                  alt={`Plot ${plot.plot_id} - ${pIdx}`}
+                                  className="w-16 h-16 object-cover rounded-md border border-gray-200"
+                                />
+                              ))}
+                            </div>
                           </div>
                         )}
+
+                        <div className="flex justify-between pt-2 border-t mt-2">
+                          <span className="text-gray-500 text-xs">Registered:</span>
+                          <span className="text-xs text-gray-600">{new Date(plot.created_at).toLocaleDateString()}</span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -889,6 +1079,123 @@ const HaritSwarajMRV = () => {
                 </table>
               </div>
             </div>
+
+            {/* Biomass Harvests Table */}
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="p-6 border-b">
+                <h3 className="text-lg font-semibold">Biomass Harvests</h3>
+                <p className="text-sm text-gray-500 mt-1">History of biomass collected from plots</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Harvest ID</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plot</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity (Tons)</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Photos</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {harvests.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="px-6 py-8 text-center text-gray-500">No harvests found</td>
+                      </tr>
+                    ) : (
+                      harvests.map(h => (
+                        <tr key={h.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 font-medium text-green-600">{h.biomass_batch_id}</td>
+                          <td className="px-6 py-4 text-sm">Plot #{h.plot_id}</td>
+                          <td className="px-6 py-4 font-semibold">{h.actual_harvested_ton}</td>
+                          <td className="px-6 py-4">
+                            <div className="flex gap-1">
+                              {h.photo_path_1 && (
+                                <img
+                                  src={`${API_URL}/uploads/${h.photo_path_1.split('/').pop()}`}
+                                  className="w-10 h-10 object-cover rounded border" alt="h1"
+                                />
+                              )}
+                              {h.photo_path_2 && (
+                                <img
+                                  src={`${API_URL}/uploads/${h.photo_path_2.split('/').pop()}`}
+                                  className="w-10 h-10 object-cover rounded border" alt="h2"
+                                />
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600">{new Date(h.created_at).toLocaleDateString()}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Transport Logistics Table */}
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="p-6 border-b">
+                <h3 className="text-lg font-semibold">Logistics & Transport</h3>
+                <p className="text-sm text-gray-500 mt-1">Inbound and outbound transport records</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Shipment ID</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vehicle</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Route</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Photos</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {transports.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" className="px-6 py-8 text-center text-gray-500">No transport records found</td>
+                      </tr>
+                    ) : (
+                      transports.map(t => (
+                        <tr key={t.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 font-medium text-green-600">{t.shipment_id}</td>
+                          <td className="px-6 py-4">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${t.type === 'inbound' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}>
+                              {t.type.toUpperCase()}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm">
+                            {t.vehicle_number}
+                            <p className="text-xs text-gray-500">{t.vehicle_type}</p>
+                          </td>
+                          <td className="px-6 py-4 text-xs text-gray-600">
+                            {t.route_from} → {t.route_to}
+                          </td>
+                          <td className="px-6 py-4 font-medium">{t.quantity_kg} kg</td>
+                          <td className="px-6 py-4">
+                            <div className="flex gap-1">
+                              {t.loading_photo_path && (
+                                <img
+                                  src={`${API_URL}/uploads/${t.loading_photo_path.split('/').pop()}`}
+                                  className="w-10 h-10 object-cover rounded border" alt="load"
+                                />
+                              )}
+                              {t.unloading_photo_path && (
+                                <img
+                                  src={`${API_URL}/uploads/${t.unloading_photo_path.split('/').pop()}`}
+                                  className="w-10 h-10 object-cover rounded border" alt="unload"
+                                />
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
 
@@ -1022,6 +1329,24 @@ const HaritSwarajMRV = () => {
                   </div>
                 </div>
 
+                {/* Photos & Media */}
+                {selectedBatch.photo_path && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <Camera size={20} className="text-green-600" />
+                      Photos & Media
+                    </h3>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <img
+                        src={`${API_URL}/uploads/${selectedBatch.photo_path.split('/').pop()}`}
+                        alt="Batch"
+                        className="max-w-full h-auto rounded-lg shadow-sm border border-gray-200"
+                      />
+                      <p className="text-xs text-gray-500 mt-2 text-center">Batch Production Photo</p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Quality Metrics */}
                 <div>
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -1144,200 +1469,7 @@ const HaritSwarajMRV = () => {
 
   // ============ BIOMASS ID COMPONENT ============
 
-  const BiomassIdView = () => {
-    const [submitting, setSubmitting] = useState(false);
-    const [message, setMessage] = useState('');
 
-    const handlePhotoChange = (index, file) => {
-      const newPhotos = [...plotForm.photos];
-      newPhotos[index] = file;
-      setPlotForm({ ...plotForm, photos: newPhotos });
-    };
-
-    const handleSubmit = async (e) => {
-      e.preventDefault();
-      setSubmitting(true);
-      setMessage('');
-
-      try {
-        const formData = new FormData();
-        formData.append('plot_id', plotForm.plot_id);
-        formData.append('type', plotForm.type);
-        formData.append('species', plotForm.species);
-        formData.append('area', plotForm.area);
-        formData.append('expected_biomass', plotForm.expected_biomass);
-
-        plotForm.photos.forEach((photo, idx) => {
-          if (photo) formData.append(`photo_${idx}`, photo);
-        });
-
-        if (plotForm.kml_file) {
-          formData.append('kml_file', plotForm.kml_file);
-        }
-
-        const response = await fetchWithAuth('/biomass/register-plot', {
-          method: 'POST',
-          body: formData
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.detail || 'Failed to register plot');
-        }
-
-        setMessage(`✅ Plot registered successfully! Status: ${data.status}`);
-        setPlotForm({
-          plot_id: '',
-          type: 'Wood',
-          species: '',
-          area: '',
-          expected_biomass: '',
-          photos: [null, null, null, null],
-          kml_file: null
-        });
-
-        // Refresh plots
-        fetchPlots();
-        fetchDashboardData();
-      } catch (err) {
-        setMessage(`❌ Error: ${err.message}`);
-      } finally {
-        setSubmitting(false);
-      }
-    };
-
-    return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <MapPin className="text-green-600" size={24} />
-          <h2 className="text-xl font-bold">{t('biomass.title')}</h2>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('biomass.plot_id')}</label>
-              <input
-                type="text"
-                value={plotForm.plot_id}
-                onChange={(e) => setPlotForm({ ...plotForm, plot_id: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                placeholder="PLT-002"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('biomass.type')}</label>
-              <select
-                value={plotForm.type}
-                onChange={(e) => setPlotForm({ ...plotForm, type: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                required
-              >
-                <option value="Wood">Wood</option>
-                <option value="Agricultural Waste">Agricultural Waste</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('biomass.species')}</label>
-              <input
-                type="text"
-                value={plotForm.species}
-                onChange={(e) => setPlotForm({ ...plotForm, species: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                placeholder="Bamboo"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('biomass.area')}</label>
-              <input
-                type="number"
-                step="0.1"
-                value={plotForm.area}
-                onChange={(e) => setPlotForm({ ...plotForm, area: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                placeholder="2.5"
-                required
-              />
-            </div>
-
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('biomass.expected_biomass')}</label>
-              <input
-                type="number"
-                step="0.1"
-                value={plotForm.expected_biomass}
-                onChange={(e) => setPlotForm({ ...plotForm, expected_biomass: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                placeholder="15.5"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">{t('biomass.kml_upload')}</label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-              <Upload className="mx-auto text-gray-400 mb-2" size={32} />
-              <p className="text-sm text-gray-600 mb-2">Drop KML file or click to browse</p>
-              <input
-                type="file"
-                accept=".kml"
-                onChange={(e) => setPlotForm({ ...plotForm, kml_file: e.target.files[0] })}
-                className="hidden"
-                id="kml-upload"
-                required
-              />
-              <label htmlFor="kml-upload" className="cursor-pointer text-green-600 text-sm font-medium">
-                {plotForm.kml_file ? plotForm.kml_file.name : 'Choose file'}
-              </label>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">{t('biomass.photos')}</label>
-            <div className="grid grid-cols-2 gap-4">
-              {[0, 1, 2, 3].map((idx) => (
-                <div key={idx} className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                  <Camera className="mx-auto text-gray-400 mb-2" size={24} />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handlePhotoChange(idx, e.target.files[0])}
-                    className="hidden"
-                    id={`photo-${idx}`}
-                    required
-                  />
-                  <label htmlFor={`photo-${idx}`} className="cursor-pointer text-green-600 text-xs font-medium">
-                    {plotForm.photos[idx] ? plotForm.photos[idx].name : `Photo ${idx + 1}`}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {message && (
-            <div className={`p-4 rounded-lg ${message.includes('✅') ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
-              {message}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:bg-gray-400"
-          >
-            {submitting ? t('common.loading') : t('biomass.register_plot')}
-          </button>
-        </form>
-      </div>
-    );
-  };
 
   // ============ MANUFACTURING COMPONENT ============
 
@@ -1361,6 +1493,9 @@ const HaritSwarajMRV = () => {
         if (batchForm.video) {
           formData.append('video', batchForm.video);
         }
+        if (batchForm.photo) {
+          formData.append('photo', batchForm.photo);
+        }
 
         const response = await fetchWithAuth('/manufacturing/record', {
           method: 'POST',
@@ -1380,7 +1515,8 @@ const HaritSwarajMRV = () => {
           biochar_output: '',
           kiln_type: 'Batch Retort Kiln',
           species: '',
-          video: null
+          video: null,
+          photo: null
         });
 
         // Refresh batches
@@ -1469,18 +1605,33 @@ const HaritSwarajMRV = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">{t('manufacturing.video')}</label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-              <Upload className="mx-auto text-gray-400 mb-2" size={32} />
-              <input
-                type="file"
-                accept="video/*"
-                onChange={(e) => setBatchForm({ ...batchForm, video: e.target.files[0] })}
-                className="hidden"
-                id="video-upload"
-              />
-              <label htmlFor="video-upload" className="cursor-pointer text-green-600 text-sm font-medium">
-                {batchForm.video ? batchForm.video.name : 'Choose video file'}
-              </label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                <Upload className="mx-auto text-gray-400 mb-2" size={32} />
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) => setBatchForm({ ...batchForm, video: e.target.files[0] })}
+                  className="hidden"
+                  id="video-upload"
+                />
+                <label htmlFor="video-upload" className="cursor-pointer text-green-600 text-sm font-medium">
+                  {batchForm.video ? batchForm.video.name : 'Choose video file'}
+                </label>
+              </div>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                <Camera className="mx-auto text-gray-400 mb-2" size={32} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setBatchForm({ ...batchForm, photo: e.target.files[0] })}
+                  className="hidden"
+                  id="photo-upload-batch"
+                />
+                <label htmlFor="photo-upload-batch" className="cursor-pointer text-green-600 text-sm font-medium">
+                  {batchForm.photo ? batchForm.photo.name : 'Choose photo file'}
+                </label>
+              </div>
             </div>
           </div>
 
@@ -1504,7 +1655,7 @@ const HaritSwarajMRV = () => {
 
   // ============ MY PLOTS COMPONENT ============
 
-  const MyPlotsView = () => {
+  const MyPlotsView = ({ onDelete }) => {
     return (
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="p-6 border-b">
@@ -1520,23 +1671,64 @@ const HaritSwarajMRV = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Area (acres)</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Biomass (tons)</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {biomassPlots.map(plot => (
                 <tr key={plot.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 font-medium">{plot.plot_id}</td>
-                  <td className="px-6 py-4">{plot.type}</td>
-                  <td className="px-6 py-4">{plot.species}</td>
-                  <td className="px-6 py-4">{plot.area}</td>
-                  <td className="px-6 py-4">{plot.expected_biomass}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded text-xs ${plot.status === 'verified' ? 'bg-green-100 text-green-800' :
-                      plot.status === 'suspicious' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                      {plot.status}
-                    </span>
+                    <div className="flex gap-1">
+                      {plot.photos && plot.photos.slice(0, 2).map((photo, pIdx) => (
+                        <img
+                          key={pIdx}
+                          src={`${API_URL}/uploads/${photo.photo_path.split('/').pop()}`}
+                          alt="plot"
+                          className="w-10 h-10 object-cover rounded border"
+                        />
+                      ))}
+                      {plot.photos && plot.photos.length > 2 && (
+                        <div className="w-10 h-10 bg-gray-100 rounded border flex items-center justify-center text-xs text-gray-500">
+                          +{plot.photos.length - 2}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-sm">{plot.type}</span>
+                    <p className="text-xs text-gray-500">{plot.species}</p>
+                  </td>
+                  <td className="px-6 py-4 text-sm">{plot.area}</td>
+                  <td className="px-6 py-4 text-sm">{plot.expected_biomass}</td>
+                  <td className="px-6 py-4">
+                    <div className="relative group inline-block">
+                      <span className={`px-2 py-1 rounded text-xs cursor-help ${plot.status === 'verified' ? 'bg-green-100 text-green-800' :
+                        plot.status === 'suspicious' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                        {plot.status}
+                      </span>
+                      {plot.status === 'suspicious' && plot.verification_data?.anomaly_reasons && (
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                          <p className="font-semibold mb-1 text-yellow-400">⚠️ Suspicious Activity Detected:</p>
+                          <ul className="list-disc pl-4 space-y-1">
+                            {plot.verification_data.anomaly_reasons.map((reason, idx) => (
+                              <li key={idx}>{reason}</li>
+                            ))}
+                          </ul>
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => onDelete(plot.id)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -1549,7 +1741,7 @@ const HaritSwarajMRV = () => {
 
   // ============ MY BATCHES COMPONENT ============
 
-  const MyBatchesView = () => {
+  const MyBatchesView = ({ onDelete }) => {
     return (
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="p-6 border-b">
@@ -1565,6 +1757,7 @@ const HaritSwarajMRV = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ratio</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">CO₂ (kg)</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -1583,16 +1776,25 @@ const HaritSwarajMRV = () => {
                       {batch.status}
                     </span>
                   </td>
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => onDelete(batch.id)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
+      </div >
     );
   };
 
   // ============ MAIN RENDER ============
+
 
   if (!isAuthenticated) {
     return <LoginPage />;
@@ -1601,81 +1803,142 @@ const HaritSwarajMRV = () => {
   const userModules = modules[currentUser?.role] || [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-green-600 shadow-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Leaf className="text-white" size={32} />
-            <div>
-              <h1 className="text-xl font-bold text-white">Harit Swaraj</h1>
-              <p className="text-xs text-green-100">Biochar MRV & Carbon Sequestration</p>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar Navigation */}
+      <Sidebar
+        activeModule={activeModule}
+        setActiveModule={setActiveModule}
+        userModules={userModules}
+        moduleLabels={moduleLabels}
+        currentUser={currentUser}
+        isMobile={isMobile}
+      />
 
-          <div className="flex items-center gap-4">
-            {/* Language Selector */}
-            <div className="flex items-center bg-green-700 rounded-lg px-2 py-1">
-              <Globe size={16} className="text-green-100 mr-1" />
-              <select
-                value={i18n.language}
-                onChange={(e) => handleLanguageChange(e.target.value)}
-                className="bg-transparent text-white text-sm border-none focus:ring-0 cursor-pointer"
-              >
-                <option value="en" className="text-gray-900">English</option>
-                <option value="hi" className="text-gray-900">हिन्दी</option>
-                <option value="mr" className="text-gray-900">मराठी</option>
-              </select>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header */}
+        <header className="bg-white shadow-sm sticky top-0 z-30 border-b border-gray-200">
+          <div className="px-4 md:px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Leaf className="text-green-600" size={28} />
+              <div>
+                <h1 className="text-lg md:text-xl font-bold text-gray-900">Harit Swaraj</h1>
+                <p className="text-xs text-gray-500 hidden sm:block">Biochar MRV & Carbon Sequestration</p>
+              </div>
             </div>
-            <div className="hidden md:block text-right">
-              <p className="text-sm font-medium text-white">{currentUser?.full_name || currentUser?.username}</p>
-              <p className="text-xs text-green-100 capitalize">{currentUser?.role}</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors"
-            >
-              <LogOut size={18} />
-              <span className="hidden md:inline">{t('auth.logout')}</span>
-            </button>
-          </div>
-        </div>
-      </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Navigation */}
-        <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
-          {userModules.map(module => {
-            const Icon = moduleIcons[module];
-            return (
+            <div className="flex items-center gap-3">
+              {/* Language Selector */}
+              <div className="flex items-center bg-gray-100 rounded-lg px-2 py-1">
+                <Globe size={16} className="text-gray-600 mr-1" />
+                <select
+                  value={i18n.language}
+                  onChange={(e) => handleLanguageChange(e.target.value)}
+                  className="bg-transparent text-gray-900 text-sm border-none focus:ring-0 cursor-pointer"
+                >
+                  <option value="en">EN</option>
+                  <option value="hi">HI</option>
+                  <option value="mr">MR</option>
+                </select>
+              </div>
+
               <button
-                key={module}
-                onClick={() => setActiveModule(module)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${activeModule === module
-                  ? 'bg-green-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-                  }`}
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-3 md:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               >
-                <Icon size={18} />
-                {moduleLabels[module]}
+                <LogOut size={18} />
+                <span className="hidden md:inline">{t('auth.logout')}</span>
               </button>
-            );
-          })}
-        </div>
+            </div>
+          </div>
+        </header>
 
         {/* Content */}
-        <div>
-          {activeModule === 'dashboard' && <DashboardView />}
-          {activeModule === 'biomass-id' && <BiomassIdView />}
-          {activeModule === 'manufacturing' && <ManufacturingView />}
-          {activeModule === 'my-plots' && <MyPlotsView />}
-          {activeModule === 'my-batches' && <MyBatchesView />}
-          {activeModule === 'all-plots' && <MyPlotsView />}
-          {activeModule === 'all-batches' && <MyBatchesView />}
+        <div className="flex-1 overflow-auto p-4 md:p-6">
+          <div>
+            {/* Welcome Card for First-Time Users */}
+            {showWelcome && (
+              <WelcomeCard
+                user={currentUser}
+                onDismiss={() => {
+                  setShowWelcome(false);
+                  localStorage.setItem(`welcome_seen_${currentUser.id}`, 'true');
+                }}
+                onGetStarted={() => {
+                  setShowWelcome(false);
+                  localStorage.setItem(`welcome_seen_${currentUser.id}`, 'true');
+                  // Navigate based on role
+                  if (currentUser.role === 'farmer') setActiveModule('biomass-id');
+                  else if (currentUser.role === 'owner') setActiveModule('manufacturing');
+                  else if (currentUser.role === 'auditor') setActiveModule('all-plots');
+                  else setActiveModule('analytics');
+                }}
+              />
+            )}
+
+            {activeModule === 'dashboard' && <DashboardView />}
+            {activeModule === 'biomass-id' && (
+              <BiomassIdView
+                plotForm={plotForm}
+                setPlotForm={setPlotForm}
+                fetchWithAuth={fetchWithAuth}
+                refreshData={() => {
+                  fetchPlots();
+                  fetchDashboardData();
+                  showToast('Plot registered successfully!', 'success');
+                }}
+              />
+            )}
+            {activeModule === 'harvest' && (
+              <BiomassHarvestView
+                plots={biomassPlots}
+                fetchWithAuth={fetchWithAuth}
+              />
+            )}
+            {activeModule === 'transport' && (
+              <TransportView
+                fetchWithAuth={fetchWithAuth}
+                batches={biocharBatches}
+                distributions={[]}
+                harvests={[]}
+              />
+            )}
+            {activeModule === 'manufacturing' && <ManufacturingView />}
+            {activeModule === 'distribution' && (
+              <DistributionView
+                batches={biocharBatches}
+                distributions={distributions}
+                fetchWithAuth={fetchWithAuth}
+                onDelete={handleDeleteDistribution}
+              />
+            )}
+            {activeModule === 'my-plots' && <MyPlotsView onDelete={handleDeletePlot} />}
+            {activeModule === 'my-batches' && <MyBatchesView onDelete={handleDeleteBatch} />}
+            {activeModule === 'all-plots' && <MyPlotsView onDelete={handleDeletePlot} />}
+            {activeModule === 'all-batches' && <MyBatchesView onDelete={handleDeleteBatch} />}
+          </div>
         </div>
       </div>
+
+      {/* Toast Notifications */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* Success Animation */}
+      {showSuccess && (
+        <SuccessAnimation
+          message={successMessage}
+          onComplete={() => setShowSuccess(false)}
+        />
+      )}
     </div>
   );
 };
 
 export default HaritSwarajMRV;
+

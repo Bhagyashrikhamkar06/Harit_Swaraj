@@ -1,12 +1,36 @@
 [build]
 builder = "nixpacks"
-buildCommand = "pip install -r requirements.txt"
+# We need to install requirements for backend and build the frontend
+# Nixpacks handles python + nodejs automatically if detected
+# But we can be explicit.
 
 [deploy]
-startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
-healthcheckPath = "/docs"
-active = true
+# Use our NEW share.py which serves both Frontend + Backend
+startCommand = "python -m uvicorn share:app --host 0.0.0.0 --port $PORT"
+healthcheckPath = "/"
+restartPolicyType = "ON_FAILURE"
 
-[files]
-include = ["backend/**/*"]
-working_dir = "backend"
+[nixpacks]
+# Ensure both python and node are available
+providers = ["python", "node"]
+
+[phases.setup]
+nixPkgs = ["python311", "nodejs_20", "gcc"]
+
+[phases.install]
+cmds = [
+    "cd backend && pip install -r requirements.txt",
+    "npm install"
+]
+
+[phases.build]
+cmds = [
+    "npm run build"
+]
+
+# We need the build/ folder available to the backend during runtime
+# By default, nixpacks copies the output.
+# We need to make sure backend runs in 'backend/' dir but can see '../build'
+# OR we run from root and point to 'backend.share:app'
+# Let's run from 'backend' dir as CWD, so imports work.
+# share.py looks in "../build". This is perfect.

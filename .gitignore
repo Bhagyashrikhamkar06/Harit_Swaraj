@@ -1,23 +1,42 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
+# React
 /node_modules
 /.pnp
 .pnp.js
-
-# testing
 /coverage
-
-# production
 /build
 
-# misc
-.DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Ignore all Markdown files (keep only essential ones)
+*.md
+!README.md
+!PROJECT_TECH_REPORT.md
 
+# Python / Backend
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+.idea/
+.vscode/
+
+# Database
+*.sqlite3
+*.db
+
+# Android / Capacitor
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+android/.idea/
+android/capacitor.settings.gradle
+
+# System
+.DS_Store
+Thumbs.db
+
+# Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
