@@ -1,26 +1,23 @@
 [build]
 builder = "nixpacks"
-# We DO NOT define buildCommand here to let Nixpacks handle it naturally
-# But we need to ensure pip install happens
 
 [deploy]
-startCommand = "cd backend && python3 -m uvicorn share:app --host 0.0.0.0 --port $PORT"
+# Try standard 'python' command now that we are using the official Python provider
+startCommand = "cd backend && python -m uvicorn share:app --host 0.0.0.0 --port $PORT"
 restartPolicyType = "ON_FAILURE"
 
 [nixpacks]
+# Force both providers. This ensures standard Node and Python environments are set up.
 providers = ["node", "python"]
 
-# This is the key: Setup python environment properly
-[nixpacks.phases.setup]
-nixPkgs = ["nodejs_18", "python310", "python310Packages.pip"]
+# We DO NOT override 'setup' phase. We let the providers handle package installation.
 
-# Install Phase: Install Node deps AND Python deps
 [nixpacks.phases.install]
+# We manually define install commands to handle the folder structure
 cmds = [
     "npm config set legacy-peer-deps true && npm install",
-    "cd backend && python3 -m pip install -r requirements.txt"
+    "cd backend && pip install -r requirements.txt"
 ]
 
-# Build Phase: Build React App
 [nixpacks.phases.build]
 cmds = ["npm run build"]
