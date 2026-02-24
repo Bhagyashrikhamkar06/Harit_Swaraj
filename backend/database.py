@@ -50,10 +50,24 @@ def get_db():
 
 def init_db():
     """
-    Initialize database - create all tables
+    Initialize database - create all tables with retries
     """
+    import time
     from models import (User, Plot, PlotPhoto, BiomassHarvest, Transport, 
                         BiomassPreprocessing, ManufacturingBatch, Distribution, 
                         UnburnableProcess, BiocharApplication, Audit)
-    Base.metadata.create_all(bind=engine)
-    print("[OK] Database initialized successfully")
+    
+    max_retries = 5
+    for i in range(max_retries):
+        try:
+            Base.metadata.create_all(bind=engine)
+            print("[OK] Database initialized successfully")
+            return
+        except Exception as e:
+            if i < max_retries - 1:
+                print(f"⚠️ Database connection failed. Retrying in 5s... ({i+1}/{max_retries})")
+                time.sleep(5)
+            else:
+                print(f"❌ Database initialization failed after {max_retries} attempts: {e}")
+                # We don't raise here to allow the app to start even if DB is down 
+                # (though most routes will fail)

@@ -24,6 +24,8 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     libglib2.0-0 \
+    libpq-dev \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -36,6 +38,10 @@ COPY backend/ ./backend/
 # Copy React build from Stage 1
 COPY --from=frontend-build /app/build ./build
 
+# Set environment variables
+ENV PYTHONPATH=/app/backend
+ENV PORT=8000
+
 EXPOSE 8000
 
-CMD ["sh", "-c", "cd backend && python3 -m uvicorn share:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "cd backend && python3 -m uvicorn share:app --host 0.0.0.0 --port ${PORT}"]
