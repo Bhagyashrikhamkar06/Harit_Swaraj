@@ -25,6 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     libglib2.0-0 \
     libpq-dev \
+    libgeos-dev \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
@@ -39,9 +40,9 @@ COPY backend/ ./backend/
 COPY --from=frontend-build /app/build ./build
 
 # Set environment variables
-ENV PYTHONPATH=/app/backend
+ENV PYTHONPATH=/app
 ENV PORT=8000
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "cd backend && python3 -m uvicorn share:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["python3", "-m", "uvicorn", "backend.share:app", "--host", "0.0.0.0", "--port", "8000"]
