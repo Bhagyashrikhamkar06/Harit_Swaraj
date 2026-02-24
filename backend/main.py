@@ -105,6 +105,8 @@ app.include_router(manufacturing.router)
 app.include_router(distribution.router)
 app.include_router(audit.router)
 app.include_router(blockchain.router)
+from routers import admin
+app.include_router(admin.router)
 
 @app.get("/")
 async def root():

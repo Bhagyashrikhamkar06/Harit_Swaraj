@@ -5,7 +5,7 @@ echo ========================================
 echo.
 
 echo [1/4] Installing dependencies...
-call npm install
+call npm install --legacy-peer-deps
 if %errorlevel% neq 0 (
     echo ERROR: npm install failed
     pause

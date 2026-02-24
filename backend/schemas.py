@@ -14,6 +14,12 @@ class UserLogin(BaseModel):
     username: str
     password: str
 
+class ProfileUpdate(BaseModel):
+    full_name: Optional[str] = None
+    phone_number: Optional[str] = None
+    aadhaar_number: Optional[str] = None
+    address: Optional[str] = None
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -25,6 +31,10 @@ class UserResponse(BaseModel):
     email: str
     role: str
     full_name: Optional[str]
+    phone_number: Optional[str]
+    aadhaar_number: Optional[str]
+    address: Optional[str]
+    photo_url: Optional[str] = None
     created_at: datetime
     
     class Config:
@@ -36,6 +46,10 @@ class PlotUpdate(BaseModel):
     area: Optional[float] = None
     expected_biomass: Optional[float] = None
     status: Optional[str] = None
+    survey_number: Optional[str] = None
+    village: Optional[str] = None
+    taluka: Optional[str] = None
+    district: Optional[str] = None
 
 class PlotPhotoResponse(BaseModel):
     id: int
@@ -59,6 +73,10 @@ class PlotResponse(BaseModel):
     area: float
     expected_biomass: float
     status: str
+    survey_number: Optional[str] = None
+    village: Optional[str] = None
+    taluka: Optional[str] = None
+    district: Optional[str] = None
     verification_data: Optional[dict] = None
     created_at: datetime
     photo_count: Optional[int] = 0

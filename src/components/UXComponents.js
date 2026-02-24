@@ -1,26 +1,28 @@
 import React from 'react';
-import { CheckCircle, AlertTriangle, Info, X, Sparkles, ArrowRight, MapPin, Factory, Leaf } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Info, X, Sparkles, ArrowRight, MapPin, Factory, Leaf, Camera, Mail, Phone, ExternalLink, Clock, Trash2, Package } from 'lucide-react';
 
 // Toast Notification Component
 export const Toast = ({ message, type = 'success', onClose }) => {
     const icons = {
-        success: <CheckCircle className="text-green-500" size={20} />,
+        success: <CheckCircle className="text-emerald-500" size={20} />,
         error: <AlertTriangle className="text-red-500" size={20} />,
         info: <Info className="text-blue-500" size={20} />
     };
 
-    const bgColors = {
-        success: 'bg-green-50 border-green-200',
-        error: 'bg-red-50 border-red-200',
-        info: 'bg-blue-50 border-blue-200'
+    const styles = {
+        success: 'bg-emerald-50/80 border-emerald-200/50 text-emerald-900 shadow-emerald-500/10',
+        error: 'bg-red-50/80 border-red-200/50 text-red-900 shadow-red-500/10',
+        info: 'bg-blue-50/80 border-blue-200/50 text-blue-900 shadow-blue-500/10'
     };
 
     return (
-        <div className={`fixed top-4 right-4 z-50 ${bgColors[type]} border rounded-lg shadow-lg p-4 flex items-center gap-3 min-w-[300px] max-w-md animate-slide-in`}>
-            {icons[type]}
-            <p className="flex-1 text-sm font-medium text-gray-900">{message}</p>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-                <X size={18} />
+        <div className={`fixed top-8 right-8 z-[100] ${styles[type]} backdrop-blur-2xl border-2 rounded-[2rem] shadow-2xl p-6 flex items-center gap-4 min-w-[320px] max-w-md animate-scale-in`}>
+            <div className={`p-2 rounded-2xl ${type === 'success' ? 'bg-emerald-500/10' : type === 'error' ? 'bg-red-500/10' : 'bg-blue-500/10'}`}>
+                {icons[type]}
+            </div>
+            <p className="flex-1 text-sm font-black uppercase tracking-tight">{message}</p>
+            <button onClick={onClose} className="p-2 hover:bg-black/5 rounded-xl transition-all">
+                <X size={18} className="text-gray-400" />
             </button>
         </div>
     );
@@ -36,8 +38,8 @@ export const LoadingSpinner = ({ size = 'md', text = 'Loading...' }) => {
 
     return (
         <div className="flex flex-col items-center justify-center py-8">
-            <div className={`${sizes[size]} border-green-600 border-t-transparent rounded-full animate-spin`}></div>
-            {text && <p className="mt-3 text-sm text-gray-600">{text}</p>}
+            <div className={`${sizes[size]} border-emerald-600 border-t-transparent rounded-full animate-spin`}></div>
+            {text && <p className="mt-3 text-sm font-black uppercase tracking-widest text-slate-400">{text}</p>}
         </div>
     );
 };
@@ -45,26 +47,26 @@ export const LoadingSpinner = ({ size = 'md', text = 'Loading...' }) => {
 // Empty State Component
 export const EmptyState = ({ icon: Icon, title, description, actionText, onAction, secondaryActionText, onSecondaryAction }) => {
     return (
-        <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <Icon className="text-gray-400" size={32} />
+        <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+            <div className="w-24 h-24 bg-emerald-50 rounded-[2.5rem] flex items-center justify-center mb-8 animate-floating">
+                <Icon className="text-emerald-500" size={40} />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-            <p className="text-gray-600 mb-6 max-w-md">{description}</p>
-            <div className="flex gap-3">
+            <h3 className="text-2xl font-black uppercase tracking-tighter italic text-slate-900 mb-3">{title}</h3>
+            <p className="text-slate-500 mb-10 max-w-md font-medium leading-relaxed">{description}</p>
+            <div className="flex flex-col sm:flex-row gap-4">
                 {actionText && onAction && (
                     <button
                         onClick={onAction}
-                        className="px-6 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
+                        className="px-10 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-emerald-700 hover:shadow-2xl hover:shadow-emerald-500/30 transition-all flex items-center justify-center gap-3 active:scale-95"
                     >
                         {actionText}
-                        <ArrowRight size={18} />
+                        <ArrowRight size={20} />
                     </button>
                 )}
                 {secondaryActionText && onSecondaryAction && (
                     <button
                         onClick={onSecondaryAction}
-                        className="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                        className="px-10 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95"
                     >
                         {secondaryActionText}
                     </button>
@@ -127,62 +129,70 @@ export const WelcomeCard = ({ user, onDismiss, onGetStarted }) => {
         }
     };
 
-    const config = roleMessages[user?.role] || roleMessages.farmer;
-    const Icon = config.icon;
+    const content = roleMessages[user?.role] || {
+        title: `Welcome, ${user?.username || 'User'}!`,
+        description: "Let's explore the Harit Swaraj ecosystem.",
+        icon: Sparkles,
+        primaryAction: "Go to Dashboard",
+        steps: [
+            "Monitor biodiversity and carbon stocks",
+            "Verify supply chain transparency",
+            "Manage your profile and settings"
+        ]
+    };
+
+    const Icon = content.icon;
 
     return (
-        <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-xl shadow-lg p-6 mb-6 border border-green-100">
-            <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
-                        <Icon className="text-white" size={24} />
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 backdrop-blur-2xl bg-emerald-950/40 animate-fade-in">
+            <div className="bg-white rounded-[3.5rem] shadow-[0_32px_128px_-16px_rgba(6,78,59,0.3)] max-w-2xl w-full overflow-hidden border border-emerald-100 flex flex-col md:flex-row animate-scale-in">
+                {/* Visual Side */}
+                <div className="md:w-5/12 bg-emerald-950 p-10 text-white relative overflow-hidden flex flex-col justify-between">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/20 blur-[80px] rounded-full -mr-32 -mt-32" />
+                    <div className="relative z-10 w-16 h-16 bg-white/10 rounded-3xl flex items-center justify-center backdrop-blur-3xl border border-white/20 animate-floating">
+                        <Icon size={32} className="text-emerald-400" />
                     </div>
-                    <div>
-                        <h2 className="text-xl font-bold text-gray-900">{config.title}</h2>
-                        <p className="text-sm text-gray-600">{user?.full_name || user?.username}</p>
+                    <div className="relative z-10 mt-12">
+                        <h2 className="text-4xl font-black uppercase tracking-tighter italic leading-none">{content.title}</h2>
+                        <div className="w-12 h-1.5 bg-emerald-500 rounded-full mt-6" />
                     </div>
                 </div>
-                <button
-                    onClick={onDismiss}
-                    className="text-gray-400 hover:text-gray-600"
-                >
-                    <X size={20} />
-                </button>
-            </div>
 
-            <p className="text-gray-700 mb-4">{config.description}</p>
+                {/* Content Side */}
+                <div className="md:w-7/12 p-12 flex flex-col">
+                    <div className="flex-1">
+                        <p className="text-lg text-slate-600 font-medium leading-relaxed mb-8">
+                            {content.description}
+                        </p>
 
-            <div className="bg-white rounded-lg p-4 mb-4">
-                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <Sparkles size={16} className="text-yellow-500" />
-                    Quick Start Guide
-                </h3>
-                <ol className="space-y-2">
-                    {config.steps.map((step, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
-                            <span className="flex-shrink-0 w-5 h-5 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-xs font-bold">
-                                {idx + 1}
-                            </span>
-                            <span>{step}</span>
-                        </li>
-                    ))}
-                </ol>
-            </div>
+                        <div className="space-y-4 mb-10">
+                            {content.steps.map((step, idx) => (
+                                <div key={idx} className="flex items-start gap-4">
+                                    <div className="mt-1 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center flex-shrink-0">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                    </div>
+                                    <p className="text-sm font-bold text-slate-700">{step}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
 
-            <div className="flex gap-3">
-                <button
-                    onClick={onGetStarted}
-                    className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-                >
-                    {config.primaryAction}
-                    <ArrowRight size={18} />
-                </button>
-                <button
-                    onClick={onDismiss}
-                    className="px-4 py-2.5 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors border border-gray-200"
-                >
-                    I'll Explore
-                </button>
+                    <div className="flex flex-col gap-3">
+                        <button
+                            onClick={onGetStarted}
+                            className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-emerald-700 hover:shadow-2xl hover:shadow-emerald-500/30 transition-all flex items-center justify-center gap-3 active:scale-95"
+                        >
+                            {content.primaryAction}
+                            <ArrowRight size={20} />
+                        </button>
+                        <button
+                            onClick={onDismiss}
+                            className="w-full py-3 text-slate-400 font-black uppercase tracking-widest text-[10px] hover:text-slate-600 transition-colors"
+                        >
+                            Maybe Later
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );
@@ -196,13 +206,13 @@ export const SuccessAnimation = ({ message, onComplete }) => {
     }, [onComplete]);
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl p-8 text-center animate-scale-in">
-                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
-                    <CheckCircle className="text-green-600" size={40} />
+        <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-xl flex items-center justify-center z-[100] animate-fade-in">
+            <div className="bg-white rounded-[3rem] p-12 text-center shadow-2xl border border-emerald-100 animate-scale-in max-w-sm w-full mx-6">
+                <div className="w-24 h-24 bg-emerald-50 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 animate-bounce transition-all duration-500">
+                    <CheckCircle className="text-emerald-500" size={48} />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Success!</h3>
-                <p className="text-gray-600">{message}</p>
+                <h3 className="text-3xl font-black uppercase tracking-tighter italic text-slate-900 mb-3">Certified!</h3>
+                <p className="text-slate-600 font-medium leading-relaxed">{message}</p>
             </div>
         </div>
     );
@@ -210,35 +220,35 @@ export const SuccessAnimation = ({ message, onComplete }) => {
 
 // Confirmation Dialog Component
 export const ConfirmDialog = ({ title, message, confirmText = 'Confirm', cancelText = 'Cancel', onConfirm, onCancel, type = 'warning' }) => {
-    const colors = {
-        warning: 'bg-yellow-100 text-yellow-600',
-        danger: 'bg-red-100 text-red-600',
-        info: 'bg-blue-100 text-blue-600'
+    const config = {
+        warning: { bg: 'bg-emerald-50', text: 'text-emerald-600', icon: AlertTriangle, btn: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20' },
+        danger: { bg: 'bg-red-50', text: 'text-red-600', icon: AlertTriangle, btn: 'bg-red-600 hover:bg-red-700 shadow-red-500/20' },
+        info: { bg: 'bg-blue-50', text: 'text-blue-600', icon: Info, btn: 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20' }
     };
 
+    const style = config[type] || config.warning;
+    const Icon = style.icon;
+
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 animate-scale-in">
-                <div className={`w-12 h-12 ${colors[type]} rounded-full flex items-center justify-center mb-4`}>
-                    <AlertTriangle size={24} />
+        <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-xl flex items-center justify-center z-[100] p-6 animate-fade-in">
+            <div className="bg-white rounded-[3.5rem] shadow-2xl max-w-md w-full p-12 animate-scale-in border border-emerald-100">
+                <div className={`w-20 h-20 ${style.bg} rounded-[2rem] flex items-center justify-center mb-8 mx-auto`}>
+                    <Icon className={style.text} size={32} />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
-                <p className="text-gray-600 mb-6">{message}</p>
-                <div className="flex gap-3">
-                    <button
-                        onClick={onCancel}
-                        className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                    >
-                        {cancelText}
-                    </button>
+                <h3 className="text-2xl font-black uppercase tracking-tighter italic text-center text-slate-900 mb-3">{title}</h3>
+                <p className="text-slate-600 text-center font-medium leading-relaxed mb-10">{message}</p>
+                <div className="flex flex-col gap-3">
                     <button
                         onClick={onConfirm}
-                        className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-colors ${type === 'danger'
-                                ? 'bg-red-600 text-white hover:bg-red-700'
-                                : 'bg-green-600 text-white hover:bg-green-700'
-                            }`}
+                        className={`w-full py-4 ${style.btn} text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl active:scale-95`}
                     >
                         {confirmText}
+                    </button>
+                    <button
+                        onClick={onCancel}
+                        className="w-full py-3 text-slate-400 font-black uppercase tracking-widest text-[10px] hover:text-slate-600 transition-colors"
+                    >
+                        {cancelText}
                     </button>
                 </div>
             </div>
@@ -255,14 +265,14 @@ export const HelpTooltip = ({ text, children }) => {
             <button
                 onMouseEnter={() => setShow(true)}
                 onMouseLeave={() => setShow(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-emerald-400 hover:text-emerald-600 transition-colors"
             >
                 {children || <Info size={16} />}
             </button>
             {show && (
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap z-10">
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-4 px-5 py-3 bg-slate-900 text-white text-[11px] font-bold uppercase tracking-widest rounded-2xl shadow-2xl z-[100] min-w-[200px] text-center animate-scale-in">
                     {text}
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-8 border-transparent border-t-slate-900"></div>
                 </div>
             )}
         </div>
@@ -272,27 +282,36 @@ export const HelpTooltip = ({ text, children }) => {
 // Progress Steps Component
 export const ProgressSteps = ({ steps, currentStep }) => {
     return (
-        <div className="flex items-center justify-between mb-8">
-            {steps.map((step, idx) => (
-                <React.Fragment key={idx}>
-                    <div className="flex flex-col items-center">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${idx < currentStep
-                                ? 'bg-green-600 text-white'
-                                : idx === currentStep
-                                    ? 'bg-green-100 text-green-600 border-2 border-green-600'
-                                    : 'bg-gray-200 text-gray-400'
-                            }`}>
-                            {idx < currentStep ? <CheckCircle size={20} /> : idx + 1}
+        <div className="flex items-center justify-between mb-12 px-6">
+            {steps.map((step, idx) => {
+                const isCompleted = idx < currentStep;
+                const isActive = idx === currentStep;
+
+                return (
+                    <React.Fragment key={idx}>
+                        <div className="flex flex-col items-center group">
+                            <div className={`w-14 h-14 rounded-[1.5rem] flex items-center justify-center transition-all duration-500 ${isCompleted
+                                ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/20'
+                                : isActive
+                                    ? 'bg-white text-emerald-600 border-2 border-emerald-600 shadow-xl'
+                                    : 'bg-slate-100 text-slate-400'
+                                }`}>
+                                {isCompleted ? <CheckCircle size={24} /> : (
+                                    <span className="text-lg font-black italic">{idx + 1}</span>
+                                )}
+                            </div>
+                            <p className={`text-[10px] font-black uppercase tracking-[0.2em] mt-4 transition-colors ${isActive ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                {step}
+                            </p>
                         </div>
-                        <p className={`text-xs mt-2 ${idx <= currentStep ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>
-                            {step}
-                        </p>
-                    </div>
-                    {idx < steps.length - 1 && (
-                        <div className={`flex-1 h-1 mx-2 ${idx < currentStep ? 'bg-green-600' : 'bg-gray-200'}`}></div>
-                    )}
-                </React.Fragment>
-            ))}
+                        {idx < steps.length - 1 && (
+                            <div className="flex-1 h-0.5 mx-4 mt-[-20px] bg-slate-100 relative overflow-hidden">
+                                <div className={`absolute inset-0 bg-emerald-600 transition-all duration-1000 ${isCompleted ? 'translate-x-0' : '-translate-x-full'}`} />
+                            </div>
+                        )}
+                    </React.Fragment>
+                );
+            })}
         </div>
     );
 };

@@ -11,7 +11,7 @@ echo  REMOTE ACCESS IS ON!
 echo  Your senior can now use the app from anywhere.
 echo  
 echo  1. Backend running on port 8000
-2. Public Link active via ngrok
+echo  2. Public Link active via ngrok
 echo.
 echo  DO NOT CLOSE THIS WINDOW.
 echo ========================================================

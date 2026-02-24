@@ -54,6 +54,10 @@ async def get_dashboard_summary(
     pending_plots = plots_query.filter(Plot.status == 'pending').count()
     suspicious_plots = plots_query.filter(Plot.status == 'suspicious').count()
     
+    # Batch stats
+    verified_batches = batches_query.filter(ManufacturingBatch.status == 'verified').count()
+    pending_batches = batches_query.filter(ManufacturingBatch.status == 'pending').count()
+
     return {
         "total_plots": total_plots,
         "total_harvests": total_harvests,
@@ -66,5 +70,7 @@ async def get_dashboard_summary(
         "verified_plots": verified_plots,
         "pending_plots": pending_plots,
         "suspicious_plots": suspicious_plots,
+        "verified_batches": verified_batches,
+        "pending_batches": pending_batches,
         "user_role": current_user.role
     }

@@ -15,6 +15,10 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     role = Column(String(20), nullable=False)  # 'owner', 'farmer', 'auditor', 'admin'
     full_name = Column(String(100))
+    phone_number = Column(String(20))
+    aadhaar_number = Column(String(12))
+    address = Column(Text)
+    photo_url = Column(String(500))
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
@@ -35,6 +39,13 @@ class Plot(Base):
     expected_biomass = Column(Float, nullable=False)  # in tons
     status = Column(String(20), nullable=False, default='pending')
     kml_file_path = Column(String(255))
+    
+    # 7/12 (Land Record) Details
+    survey_number = Column(String(50))
+    village = Column(String(100))
+    taluka = Column(String(100))
+    district = Column(String(100))
+    
     verification_data = Column(JSON)
     created_at = Column(DateTime, default=datetime.utcnow)
     

@@ -19,8 +19,8 @@ async def create_harvest(
     biomass_batch_id: str = Form(...),
     plot_id: int = Form(...),
     actual_harvested_ton: float = Form(...),
-    photo_1: UploadFile = File(...),
-    photo_2: UploadFile = File(...),
+    photo_1: Optional[UploadFile] = File(None),
+    photo_2: Optional[UploadFile] = File(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -36,9 +36,9 @@ async def create_harvest(
     if not plot:
         raise HTTPException(status_code=404, detail="Plot not found")
     
-    # Save photos
-    photo_path_1 = await save_photo(photo_1, f"harvest_{biomass_batch_id}_1")
-    photo_path_2 = await save_photo(photo_2, f"harvest_{biomass_batch_id}_2")
+    # Save photos if provided
+    photo_path_1 = await save_photo(photo_1, f"harvest_{biomass_batch_id}_1") if photo_1 and photo_1.filename else None
+    photo_path_2 = await save_photo(photo_2, f"harvest_{biomass_batch_id}_2") if photo_2 and photo_2.filename else None
     
     new_harvest = BiomassHarvest(
         biomass_batch_id=biomass_batch_id,
@@ -124,8 +124,8 @@ async def delete_harvest(
 async def preprocess_biomass(
     harvest_id: int = Form(...),
     method: str = Form(...),
-    photo_before: UploadFile = File(...),
-    photo_after: UploadFile = File(...),
+    photo_before: Optional[UploadFile] = File(None),
+    photo_after: Optional[UploadFile] = File(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -139,8 +139,8 @@ async def preprocess_biomass(
     if not harvest:
         raise HTTPException(status_code=404, detail="Harvest record not found")
         
-    photo_before_path = await save_photo(photo_before, f"preprocess_{harvest_id}_before")
-    photo_after_path = await save_photo(photo_after, f"preprocess_{harvest_id}_after")
+    photo_before_path = await save_photo(photo_before, f"preprocess_{harvest_id}_before") if photo_before and photo_before.filename else None
+    photo_after_path = await save_photo(photo_after, f"preprocess_{harvest_id}_after") if photo_after and photo_after.filename else None
     
     preprocess = BiomassPreprocessing(
         harvest_id=harvest_id,

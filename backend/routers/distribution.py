@@ -158,3 +158,41 @@ async def delete_distribution(
     db.delete(dist)
     db.commit()
     return {"message": "Distribution deleted successfully"}
+
+@router.post("/unburnable", response_model=dict, status_code=status.HTTP_201_CREATED)
+async def record_unburnable(
+    batch_id: str = Form(...),
+    method: str = Form(...),
+    biochar_kg: float = Form(...),
+    additive_kg: float = Form(...),
+    photo: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Certify biochar as unburnable (Owner)
+    """
+    if current_user.role not in ['owner', 'admin']:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    # Check if batch exists by batch_id string or internal id?
+    # Component passes batch_id, but the models use internal ID for ForeignKey commonly.
+    # Looking at ManufacturingBatch model, batch_id is a unique string.
+    batch = db.query(ManufacturingBatch).filter(ManufacturingBatch.batch_id == batch_id).first()
+    if not batch:
+        raise HTTPException(status_code=404, detail=f"Batch {batch_id} not found")
+
+    photo_path = await save_photo(photo, f"unburnable_{batch_id}")
+    
+    from models import UnburnableProcess
+    unburn = UnburnableProcess(
+        batch_id=batch.id,
+        method=method,
+        biochar_weight=biochar_kg,
+        clay_weight=additive_kg,
+        photo_path=photo_path
+    )
+    
+    db.add(unburn)
+    db.commit()
+    return {"status": "certified", "batch_id": batch_id, "message": "Sequestration permanence verified"}

@@ -29,8 +29,8 @@ async def record_transport(
     harvest_id: Optional[int] = Form(None),
     distribution_id: Optional[int] = Form(None),
     
-    loading_photo: UploadFile = File(...),
-    unloading_photo: UploadFile = File(...),
+    loading_photo: Optional[UploadFile] = File(None),
+    unloading_photo: Optional[UploadFile] = File(None),
     
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -43,8 +43,8 @@ async def record_transport(
     if current_user.role not in ['owner', 'admin']:
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    loading_path = await save_photo(loading_photo, f"transport_{shipment_id}_load")
-    unloading_path = await save_photo(unloading_photo, f"transport_{shipment_id}_unload")
+    loading_path = await save_photo(loading_photo, f"transport_{shipment_id}_load") if loading_photo and loading_photo.filename else None
+    unloading_path = await save_photo(unloading_photo, f"transport_{shipment_id}_unload") if unloading_photo and unloading_photo.filename else None
     
     transport = Transport(
         shipment_id=shipment_id,
@@ -71,8 +71,9 @@ async def list_transports(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    if current_user.role not in ['owner', 'admin']:
-        raise HTTPException(status_code=403, detail="Not authorized")
+    # Farmers don't need transport records but shouldn't get a 403 error
+    if current_user.role not in ['owner', 'admin', 'auditor']:
+        return []
     return db.query(Transport).all()
 
 @router.get("/{id}", response_model=TransportResponse)
