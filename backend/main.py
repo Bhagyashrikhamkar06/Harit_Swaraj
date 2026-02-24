@@ -45,52 +45,58 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_event():
     """Initialize database and create default users"""
-    init_db()
-    
-    # Create default users if they don't exist
-    db = next(get_db())
     try:
-        # Check if admin exists
-        admin = db.query(User).filter(User.username == "admin").first()
-        if not admin:
-            # Create default users for testing
-            default_users = [
-                User(
-                    username="admin",
-                    email="admin@haritswaraj.com",
-                    password_hash=hash_password("admin123"),
-                    role="admin",
-                    full_name="System Administrator"
-                ),
-                User(
-                    username="owner1",
-                    email="owner@haritswaraj.com",
-                    password_hash=hash_password("owner123"),
-                    role="owner",
-                    full_name="Biochar Plant Owner"
-                ),
-                User(
-                    username="farmer1",
-                    email="farmer@haritswaraj.com",
-                    password_hash=hash_password("farmer123"),
-                    role="farmer",
-                    full_name="Biomass Farmer"
-                ),
-                User(
-                    username="auditor1",
-                    email="auditor@haritswaraj.com",
-                    password_hash=hash_password("auditor123"),
-                    role="auditor",
-                    full_name="Carbon Credit Auditor"
-                )
-            ]
-            db.add_all(default_users)
-            db.commit()
-            print("[OK] Default users created")
+        init_db()
+        
+        # Create default users for testing in a safe way
+        db_generator = get_db()
+        db = next(db_generator)
+        try:
+            # Check if admin exists
+            admin = db.query(User).filter(User.username == "admin").first()
+            if not admin:
+                print("Creating default demo users...")
+                default_users = [
+                    User(
+                        username="admin",
+                        email="admin@haritswaraj.com",
+                        password_hash=hash_password("admin123"),
+                        role="admin",
+                        full_name="System Administrator"
+                    ),
+                    User(
+                        username="owner1",
+                        email="owner@haritswaraj.com",
+                        password_hash=hash_password("owner123"),
+                        role="owner",
+                        full_name="Biochar Plant Owner"
+                    ),
+                    User(
+                        username="farmer1",
+                        email="farmer@haritswaraj.com",
+                        password_hash=hash_password("farmer123"),
+                        role="farmer",
+                        full_name="Biomass Farmer"
+                    ),
+                    User(
+                        username="auditor1",
+                        email="auditor@haritswaraj.com",
+                        password_hash=hash_password("auditor123"),
+                        role="auditor",
+                        full_name="Carbon Credit Auditor"
+                    )
+                ]
+                db.add_all(default_users)
+                db.commit()
+                print("[OK] Default users created")
+        except Exception as e:
+            print(f"⚠️ Could not create default users (DB might be busy): {e}")
+            db.rollback()
+        finally:
+            db.close()
     except Exception as e:
-        print(f"⚠️ Error initializing database content: {e}")
-    finally:
-        db.close()
+        print(f"❌ Critical Error during startup: {e}")
+        # We don't re-raise here so the app can at least start and show logs
 
 # Mount static files for serving uploads
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
