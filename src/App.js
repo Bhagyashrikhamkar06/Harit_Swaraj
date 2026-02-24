@@ -34,7 +34,7 @@ const HaritSwarajMRV = () => {
 
   // Dynamic API URL state
   const [apiUrl, setApiUrl] = useState(() => {
-    return localStorage.getItem('api_url') || (process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : '');
+    return localStorage.getItem('api_url') || (process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : 'https://haritswaraj-production.up.railway.app');
   });
   const [showServerSettings, setShowServerSettings] = useState(false);
 

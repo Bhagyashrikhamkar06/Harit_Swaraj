@@ -3,7 +3,7 @@
   "appName": "Harit Swaraj",
   "webDir": "build",
   "server": {
-    "androidScheme": "http",
+    "androidScheme": "https",
     "cleartext": true,
     "allowNavigation": [
       "*"
