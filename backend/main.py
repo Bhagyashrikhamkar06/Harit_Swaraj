@@ -49,48 +49,35 @@ async def startup_event():
         init_db()
         
         # Create default users for testing in a safe way
+        import models
+        from sqlalchemy import text
+        
         db_generator = get_db()
         db = next(db_generator)
         try:
-            # Check if admin exists
-            admin = db.query(User).filter(User.username == "admin").first()
-            if not admin:
-                print("Creating default demo users...")
-                default_users = [
-                    User(
-                        username="admin",
-                        email="admin@haritswaraj.com",
-                        password_hash=hash_password("admin123"),
-                        role="admin",
-                        full_name="System Administrator"
-                    ),
-                    User(
-                        username="owner1",
-                        email="owner@haritswaraj.com",
-                        password_hash=hash_password("owner123"),
-                        role="owner",
-                        full_name="Biochar Plant Owner"
-                    ),
-                    User(
-                        username="farmer1",
-                        email="farmer@haritswaraj.com",
-                        password_hash=hash_password("farmer123"),
-                        role="farmer",
-                        full_name="Biomass Farmer"
-                    ),
-                    User(
-                        username="auditor1",
-                        email="auditor@haritswaraj.com",
-                        password_hash=hash_password("auditor123"),
-                        role="auditor",
-                        full_name="Carbon Credit Auditor"
+            # Force create users if missing
+            for u_data in [
+                ("admin", "admin@haritswaraj.com", "admin123", "admin", "System Administrator"),
+                ("owner1", "owner@haritswaraj.com", "owner123", "owner", "Biochar Plant Owner"),
+                ("farmer1", "farmer@haritswaraj.com", "farmer123", "farmer", "Biomass Farmer"),
+                ("auditor1", "auditor@haritswaraj.com", "auditor123", "auditor", "Carbon Credit Auditor")
+            ]:
+                username, email, pwd, role, name = u_data
+                exists = db.query(models.User).filter(models.User.username == username).first()
+                if not exists:
+                    print(f"Adding default user: {username}")
+                    new_user = models.User(
+                        username=username,
+                        email=email,
+                        password_hash=hash_password(pwd),
+                        role=role,
+                        full_name=name
                     )
-                ]
-                db.add_all(default_users)
-                db.commit()
-                print("[OK] Default users created")
+                    db.add(new_user)
+            db.commit()
+            print("[OK] Startup verification complete.")
         except Exception as e:
-            print(f"⚠️ Could not create default users (DB might be busy): {e}")
+            print(f"⚠️ Could not verify default users: {e}")
             db.rollback()
         finally:
             db.close()
