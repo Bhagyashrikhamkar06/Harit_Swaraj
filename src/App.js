@@ -34,7 +34,7 @@ const HaritSwarajMRV = () => {
   const [loading, setLoading] = useState(false);
 
   // Hardcoded API URL for Production
-  const [apiUrl, setApiUrl] = useState('https://web-production-dcbaf.up.railway.app');
+  const [apiUrl, setApiUrl] = useState(process.env.REACT_APP_API_URL || 'https://web-production-dcbaf.up.railway.app');
   const [showServerSettings] = useState(false);
 
   // PWA state
