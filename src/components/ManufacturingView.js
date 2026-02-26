@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Factory, Upload, Camera, CheckCircle, Info, ChevronRight, Video, FileText, Droplets, Zap, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-const ManufacturingView = ({ fetchWithAuth, fetchBatches, fetchDashboardData, theme }) => {
+const ManufacturingView = ({ fetchWithAuth, fetchBatches, fetchDashboardData, theme, onSuccess }) => {
     const { t } = useTranslation();
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState('');
@@ -61,6 +61,7 @@ const ManufacturingView = ({ fetchWithAuth, fetchBatches, fetchDashboardData, th
             // Refresh batches
             if (fetchBatches) fetchBatches();
             if (fetchDashboardData) fetchDashboardData();
+            if (onSuccess) onSuccess();
         } catch (err) {
             setMessage(`ERROR: ❌ ${err.message}`);
         } finally {

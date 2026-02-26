@@ -14,6 +14,7 @@ import ProfileView from './components/ProfileView';
 import DataTable from './components/DataTable';
 import TechnicalOperationsView from './components/TechnicalOperationsView';
 import AuditSubmissionView from './components/AuditSubmissionView';
+import SupplyChainWizard from './components/SupplyChainWizard';
 
 
 
@@ -32,13 +33,9 @@ const HaritSwarajMRV = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Dynamic API URL state
-  const [apiUrl, setApiUrl] = useState(() => {
-    return localStorage.getItem('api_url') ||
-      process.env.REACT_APP_API_URL ||
-      (process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : 'https://web-production-dcbaf.up.railway.app');
-  });
-  const [showServerSettings, setShowServerSettings] = useState(false);
+  // Hardcoded API URL for Production
+  const [apiUrl, setApiUrl] = useState('https://web-production-dcbaf.up.railway.app');
+  const [showServerSettings] = useState(false);
 
   // PWA state
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -389,10 +386,10 @@ const HaritSwarajMRV = () => {
   };
 
   const modules = {
-    owner: ['dashboard', 'biomass-id', 'harvest', 'transport', 'manufacturing', 'technical-ops', 'distribution', 'my-plots', 'my-batches', 'settings'],
+    owner: ['dashboard', 'supply-chain', 'biomass-id', 'harvest', 'transport', 'manufacturing', 'technical-ops', 'distribution', 'my-plots', 'my-batches', 'settings'],
     farmer: ['dashboard', 'biomass-id', 'harvest', 'my-plots', 'settings'],
     auditor: ['dashboard', 'audit-submission', 'all-plots', 'all-batches', 'settings'],
-    admin: ['dashboard', 'biomass-id', 'all-plots', 'harvest', 'transport', 'manufacturing', 'technical-ops', 'distribution', 'all-batches', 'settings']
+    admin: ['dashboard', 'supply-chain', 'biomass-id', 'all-plots', 'harvest', 'transport', 'manufacturing', 'technical-ops', 'distribution', 'all-batches', 'settings']
   };
 
   const moduleIcons = {
@@ -408,6 +405,7 @@ const HaritSwarajMRV = () => {
     'all-batches': Package,
     'technical-ops': Settings,
     'audit-submission': ShieldCheck,
+    'supply-chain': Activity,
     settings: Settings
   };
 
@@ -424,6 +422,7 @@ const HaritSwarajMRV = () => {
     dashboard: t('dashboard.title'),
     'technical-ops': 'Process Optimization',
     'audit-submission': 'Independent Audit',
+    'supply-chain': 'Supply Chain Workflow',
     settings: 'Profile & Settings'
   };
 
@@ -488,26 +487,11 @@ const HaritSwarajMRV = () => {
           <>
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-green-500/10 rounded-full blur-[120px] animate-pulse" />
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
+            <div className="absolute top-4 left-4 bg-green-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg z-50 uppercase tracking-widest">PRODUCTION SERVER</div>
           </>
         )}
 
         <div className={`${theme === 'dark' ? 'bg-slate-800/80 border-slate-700' : 'bg-white border-transparent'} backdrop-blur-xl rounded-[2.5rem] shadow-2xl p-8 md:p-10 w-full max-w-md relative z-10 border transition-all duration-300`}>
-          <button
-            onClick={() => setShowServerSettings(!showServerSettings)}
-            className={`absolute top-6 right-6 p-2 rounded-xl transition-all ${theme === 'dark' ? 'text-slate-400 hover:bg-slate-700 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-green-600'}`}
-            title="Server Settings"
-          >
-            <Settings size={20} />
-          </button>
-
-          <button
-            onClick={toggleTheme}
-            className={`absolute top-6 right-16 p-2 rounded-xl transition-all ${theme === 'dark' ? 'text-yellow-400 hover:bg-slate-700' : 'text-gray-400 hover:bg-gray-100 hover:text-yellow-500'}`}
-            title="Toggle Theme"
-          >
-            {theme === 'dark' ? <Flame size={20} /> : <Droplet size={20} />}
-          </button>
-
           <div className="text-center mb-8">
             <div className={`inline-flex items-center justify-center w-20 h-20 rounded-[2rem] mb-6 shadow-inner ${theme === 'dark' ? 'bg-green-500/10' : 'bg-green-100'}`}>
               <Leaf className="text-green-500" size={36} />
@@ -516,39 +500,6 @@ const HaritSwarajMRV = () => {
             <p className={`${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'} mt-3 font-medium`}>{t('tagline')}</p>
           </div>
 
-          {showServerSettings && (
-            <div className={`mb-8 p-5 rounded-2xl border animate-in slide-in-from-top duration-300 ${theme === 'dark' ? 'bg-slate-900/50 border-slate-700' : 'bg-gray-50 border-gray-200'}`}>
-              <div className={`flex items-center gap-2 mb-4 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                <Server size={18} />
-                <span className="text-xs font-black uppercase tracking-[0.2em]">Backend Config</span>
-              </div>
-              <div className="space-y-3">
-                <input
-                  type="text"
-                  value={apiUrl}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/\/$/, ''); // Remove trailing slash
-                    setApiUrl(val);
-                    localStorage.setItem('api_url', val);
-                  }}
-                  placeholder="https://your-ngrok-url.ngrok-free.app"
-                  className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
-                />
-                <p className="text-[10px] text-gray-500 italic">Enter your ngrok or local IP address here. No trailing slash.</p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      setApiUrl('http://localhost:8000');
-                      localStorage.setItem('api_url', 'http://localhost:8000');
-                    }}
-                    className="text-[10px] text-blue-600 font-bold hover:underline"
-                  >
-                    Reset to Localhost
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
           <div className={`flex gap-2 mb-8 p-1 rounded-2xl ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-gray-100'}`}>
             <button
@@ -634,8 +585,14 @@ const HaritSwarajMRV = () => {
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                {error}
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm animate-shake">
+                <div className="flex items-center gap-2 mb-1">
+                  <AlertTriangle size={16} />
+                  <span className="font-bold">Connection Failed</span>
+                </div>
+                {error === 'Failed to fetch'
+                  ? 'Server unreachable. If you are on a private Wi-Fi, try switching to Mobile Data.'
+                  : error}
               </div>
             )}
 
@@ -1665,7 +1622,7 @@ const HaritSwarajMRV = () => {
                   localStorage.setItem(`welcome_seen_${currentUser.id}`, 'true');
                   // Navigate based on role
                   if (currentUser.role === 'farmer') setActiveModule('biomass-id');
-                  else if (currentUser.role === 'owner') setActiveModule('manufacturing');
+                  else if (currentUser.role === 'owner') setActiveModule('supply-chain');
                   else if (currentUser.role === 'auditor') setActiveModule('all-plots');
                   else setActiveModule('dashboard');
                 }}
@@ -1673,6 +1630,27 @@ const HaritSwarajMRV = () => {
             )}
 
             {activeModule === 'dashboard' && <DashboardView />}
+            {activeModule === 'supply-chain' && (
+              <SupplyChainWizard
+                theme={theme}
+                fetchWithAuth={fetchWithAuth}
+                plotForm={plotForm}
+                setPlotForm={setPlotForm}
+                refreshData={() => {
+                  fetchPlots();
+                  fetchDashboardData();
+                  showToast('Plot registered successfully!', 'success');
+                }}
+                plots={biomassPlots}
+                batches={biocharBatches}
+                distributions={distributions}
+                harvests={harvests}
+                fetchBatches={fetchBatches}
+                fetchDashboardData={fetchDashboardData}
+                onDelete={handleDeleteDistribution}
+                onSuccess={fetchAllData}
+              />
+            )}
             {activeModule === 'biomass-id' && (
               <BiomassIdView
                 plotForm={plotForm}
