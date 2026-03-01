@@ -52,7 +52,7 @@ async def record_distribution(
 
 @router.post("/application", response_model=ApplicationResponse, status_code=status.HTTP_201_CREATED)
 async def record_application(
-    distribution_id: int = Form(...),
+    distribution_id: str = Form(...),
     purpose: str = Form(..., description="Agriculture/Horticulture"),
     photo: UploadFile = File(...),
     kml_file: UploadFile = File(...),
@@ -63,15 +63,18 @@ async def record_application(
     Record application of biochar in the field (Farmer/Customer)
     """
     # Check distribution existence
-    dist = db.query(Distribution).filter(Distribution.id == distribution_id).first()
-    if not dist:
-        raise HTTPException(status_code=404, detail="Distribution record not found")
+    dist = None
+    if distribution_id.isdigit():
+        dist = db.query(Distribution).filter(Distribution.id == int(distribution_id)).first()
         
-    photo_path = await save_photo(photo, f"application_{distribution_id}")
-    kml_path = await save_kml(kml_file, f"application_{distribution_id}")
+    if not dist:
+        raise HTTPException(status_code=400, detail=f"Distribution ID '{distribution_id}' not found")
+        
+    photo_path = await save_photo(photo, f"application_{dist.id}")
+    kml_path = await save_kml(kml_file, f"application_{dist.id}")
     
     app = BiocharApplication(
-        distribution_id=distribution_id,
+        distribution_id=dist.id,
         purpose=purpose,
         photo_path=photo_path,
         kml_file_path=kml_path

@@ -68,7 +68,16 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
                 body: formData
             });
 
-            if (!res.ok) throw new Error('Failed to record application');
+            if (!res.ok) {
+                let errorDetail = 'Failed to record application';
+                try {
+                    const errData = await res.json();
+                    if (errData.detail) {
+                        errorDetail = typeof errData.detail === 'string' ? errData.detail : (errData.detail[0]?.msg || errorDetail);
+                    }
+                } catch (e) { }
+                throw new Error(errorDetail);
+            }
             setMessage('SUCCESS: ✅ Application recorded!');
             setAppForm({ distribution_id: '', purpose: 'Agriculture', photo: null, kml_file: null });
             if (onSuccess) onSuccess();
@@ -261,11 +270,11 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-gray-700">Distribution ID</label>
                                     <input
-                                        type="number"
+                                        type="text"
                                         className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold"
                                         value={appForm.distribution_id}
                                         onChange={e => setAppForm({ ...appForm, distribution_id: e.target.value })}
-                                        placeholder="Enter Distribution ID"
+                                        placeholder="Enter Distribution ID (e.g. 1)"
                                         required
                                     />
                                 </div>
