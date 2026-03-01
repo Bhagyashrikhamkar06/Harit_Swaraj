@@ -26,8 +26,8 @@ async def record_transport(
     quantity_kg: Optional[float] = Form(None),
     
     # Links
-    harvest_id: Optional[int] = Form(None),
-    distribution_id: Optional[int] = Form(None),
+    harvest_id: Optional[str] = Form(None),
+    distribution_id: Optional[str] = Form(None),
     
     loading_photo: Optional[UploadFile] = File(None),
     unloading_photo: Optional[UploadFile] = File(None),
@@ -46,6 +46,33 @@ async def record_transport(
     loading_path = await save_photo(loading_photo, f"transport_{shipment_id}_load") if loading_photo and loading_photo.filename else None
     unloading_path = await save_photo(unloading_photo, f"transport_{shipment_id}_unload") if unloading_photo and unloading_photo.filename else None
     
+    actual_harvest_id = None
+    if harvest_id:
+        # Try finding by integer id first, then by biomass_batch_id
+        if harvest_id.isdigit():
+            harvest = db.query(BiomassHarvest).filter(BiomassHarvest.id == int(harvest_id)).first()
+        else:
+            harvest = None
+            
+        if not harvest:
+            harvest = db.query(BiomassHarvest).filter(BiomassHarvest.biomass_batch_id == harvest_id).first()
+            
+        if not harvest:
+            raise HTTPException(status_code=400, detail=f"Source Harvest '{harvest_id}' not found")
+        actual_harvest_id = harvest.id
+
+    actual_distribution_id = None
+    if distribution_id:
+        if distribution_id.isdigit():
+            distribution = db.query(Distribution).filter(Distribution.id == int(distribution_id)).first()
+        else:
+            distribution = None
+            # Assuming Distribution might have a string ID lookup or we just use int. Distribution has id and batch_id, maybe we can search by other ways but usually they use digit
+            
+        if not distribution:
+            raise HTTPException(status_code=400, detail=f"Distribution '{distribution_id}' not found")
+        actual_distribution_id = distribution.id
+
     transport = Transport(
         shipment_id=shipment_id,
         type=transport_type,
@@ -57,8 +84,8 @@ async def record_transport(
         loading_photo_path=loading_path,
         unloading_photo_path=unloading_path,
         quantity_kg=quantity_kg,
-        harvest_id=harvest_id,
-        distribution_id=distribution_id
+        harvest_id=actual_harvest_id,
+        distribution_id=actual_distribution_id
     )
     
     db.add(transport)

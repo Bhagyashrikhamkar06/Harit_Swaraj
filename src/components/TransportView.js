@@ -48,7 +48,16 @@ const TransportView = ({ fetchWithAuth, batches, distributions, harvests, theme,
                 body: formData
             });
 
-            if (!res.ok) throw new Error('Failed to record transport');
+            if (!res.ok) {
+                let errorDetail = 'Failed to record transport';
+                try {
+                    const errData = await res.json();
+                    if (errData.detail) {
+                        errorDetail = typeof errData.detail === 'string' ? errData.detail : (errData.detail[0]?.msg || errorDetail);
+                    }
+                } catch (e) { }
+                throw new Error(errorDetail);
+            }
 
             setMessage('SUCCESS: ✅ Transport record saved and synchronized!');
             setForm({
@@ -152,11 +161,11 @@ const TransportView = ({ fetchWithAuth, batches, distributions, harvests, theme,
                                         <div className="space-y-2">
                                             <label className="text-sm font-bold text-gray-700">Source Harvest ID</label>
                                             <input
-                                                type="number"
+                                                type="text"
                                                 value={form.harvest_id}
                                                 onChange={(e) => setForm({ ...form, harvest_id: e.target.value })}
                                                 className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold"
-                                                placeholder="Enter ID"
+                                                placeholder="Enter ID (e.g. BMB-... or 111)"
                                                 required
                                             />
                                         </div>
@@ -164,7 +173,7 @@ const TransportView = ({ fetchWithAuth, batches, distributions, harvests, theme,
                                         <div className="space-y-2">
                                             <label className="text-sm font-bold text-gray-700">Distribution ID</label>
                                             <input
-                                                type="number"
+                                                type="text"
                                                 value={form.distribution_id}
                                                 onChange={(e) => setForm({ ...form, distribution_id: e.target.value })}
                                                 className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all font-bold"
