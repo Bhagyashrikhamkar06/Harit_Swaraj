@@ -156,12 +156,12 @@ const TechnicalOperationsView = ({ fetchWithAuth, harvests, batches, theme }) =>
                             <div className="space-y-6">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className={`relative aspect-square border-2 border-dashed rounded-[1.5rem] p-4 flex flex-col items-center justify-center transition-all ${preForm.photo_before ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
-                                        <input type="file" accept="image/*" onChange={e => setPreForm({ ...preForm, photo_before: e.target.files[0] })} className="absolute inset-0 opacity-0 cursor-pointer z-10" required />
+                                        <input type="file" accept="image/*,video/*" capture="environment" onChange={e => setPreForm({ ...preForm, photo_before: e.target.files[0] })} className="absolute inset-0 opacity-0 cursor-pointer z-10" required />
                                         <Upload className={`mb-2 ${preForm.photo_before ? 'text-green-500' : 'text-gray-300'}`} />
                                         <span className="text-[10px] font-black text-gray-500 uppercase">Input State</span>
                                     </div>
                                     <div className={`relative aspect-square border-2 border-dashed rounded-[1.5rem] p-4 flex flex-col items-center justify-center transition-all ${preForm.photo_after ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
-                                        <input type="file" accept="image/*" onChange={e => setPreForm({ ...preForm, photo_after: e.target.files[0] })} className="absolute inset-0 opacity-0 cursor-pointer z-10" required />
+                                        <input type="file" accept="image/*,video/*" capture="environment" onChange={e => setPreForm({ ...preForm, photo_after: e.target.files[0] })} className="absolute inset-0 opacity-0 cursor-pointer z-10" required />
                                         <Upload className={`mb-2 ${preForm.photo_after ? 'text-green-500' : 'text-gray-300'}`} />
                                         <span className="text-[10px] font-black text-gray-500 uppercase">Process Output</span>
                                     </div>
@@ -197,7 +197,7 @@ const TechnicalOperationsView = ({ fetchWithAuth, harvests, batches, theme }) =>
                             </div>
                             <div className="flex flex-col md:flex-row gap-8">
                                 <div className={`flex-1 relative border-2 border-dashed rounded-[2rem] p-10 flex flex-col items-center justify-center transition-all ${unburnForm.photo ? 'bg-emerald-50 border-emerald-200' : 'bg-gray-50 border-gray-200'}`}>
-                                    <input type="file" accept="image/*" onChange={e => setUnburnForm({ ...unburnForm, photo: e.target.files[0] })} className="absolute inset-0 opacity-0 cursor-pointer z-10" required />
+                                    <input type="file" accept="image/*,video/*" capture="environment" onChange={e => setUnburnForm({ ...unburnForm, photo: e.target.files[0] })} className="absolute inset-0 opacity-0 cursor-pointer z-10" required />
                                     <Upload className={`mb-4 ${unburnForm.photo ? 'text-emerald-500' : 'text-gray-300'}`} size={40} />
                                     <h4 className="font-bold text-gray-900">Final Verification Photo</h4>
                                     <p className="text-xs text-gray-400 mt-1 uppercase font-black">{unburnForm.photo ? unburnForm.photo.name : 'Upload after mixing'}</p>

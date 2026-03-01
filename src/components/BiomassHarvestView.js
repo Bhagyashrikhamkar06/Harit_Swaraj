@@ -241,7 +241,7 @@ const BiomassHarvestView = ({ plots, fetchWithAuth, theme, onSuccess }) => {
                                             >
                                                 <input
                                                     type="file"
-                                                    accept="image/*"
+                                                    accept="image/*,video/*" capture="environment"
                                                     onChange={(e) => setHarvestForm({ ...harvestForm, [`photo_${num}`]: e.target.files[0] })}
                                                     className="absolute inset-0 opacity-0 cursor-pointer z-10"
                                                     required
@@ -330,7 +330,7 @@ const BiomassHarvestView = ({ plots, fetchWithAuth, theme, onSuccess }) => {
                                             }`}>
                                             <input
                                                 type="file"
-                                                accept="image/*"
+                                                accept="image/*,video/*" capture="environment"
                                                 onChange={(e) => setProcessForm({ ...processForm, photo_before: e.target.files[0] })}
                                                 className="absolute inset-0 opacity-0 cursor-pointer z-10"
                                                 required
@@ -345,7 +345,7 @@ const BiomassHarvestView = ({ plots, fetchWithAuth, theme, onSuccess }) => {
                                             }`}>
                                             <input
                                                 type="file"
-                                                accept="image/*"
+                                                accept="image/*,video/*" capture="environment"
                                                 onChange={(e) => setProcessForm({ ...processForm, photo_after: e.target.files[0] })}
                                                 className="absolute inset-0 opacity-0 cursor-pointer z-10"
                                                 required

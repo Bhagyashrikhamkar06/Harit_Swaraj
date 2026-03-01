@@ -280,7 +280,7 @@ const TransportView = ({ fetchWithAuth, batches, distributions, harvests, theme,
                                         }`}>
                                         <input
                                             type="file"
-                                            accept="image/*"
+                                            accept="image/*,video/*" capture="environment"
                                             onChange={(e) => setForm({ ...form, loading_photo: e.target.files[0] })}
                                             className="absolute inset-0 opacity-0 cursor-pointer z-10"
                                             required
@@ -295,7 +295,7 @@ const TransportView = ({ fetchWithAuth, batches, distributions, harvests, theme,
                                         }`}>
                                         <input
                                             type="file"
-                                            accept="image/*"
+                                            accept="image/*,video/*" capture="environment"
                                             onChange={(e) => setForm({ ...form, unloading_photo: e.target.files[0] })}
                                             className="absolute inset-0 opacity-0 cursor-pointer z-10"
                                             required

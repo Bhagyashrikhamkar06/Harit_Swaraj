@@ -230,7 +230,7 @@ const AuditSubmissionView = ({ fetchWithAuth, plots, theme }) => {
                             </div>
                             <div className="grid grid-cols-1 gap-4">
                                 <div className={`relative border-4 border-dashed rounded-[2rem] p-12 text-center transition-all ${form.photos.length > 0 ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-200'}`}>
-                                    <input type="file" multiple accept="image/*" onChange={handlePhotoChange} className="absolute inset-0 opacity-0 cursor-pointer z-10" required />
+                                    <input type="file" multiple accept="image/*,video/*" capture="environment" onChange={handlePhotoChange} className="absolute inset-0 opacity-0 cursor-pointer z-10" required />
                                     <Upload className={`mx-auto mb-4 ${form.photos.length > 0 ? 'text-green-600' : 'text-slate-300'}`} size={48} />
                                     <h4 className="text-xl font-black text-slate-900 mb-2">Upload Visual Logs</h4>
                                     <p className="text-xs font-black text-slate-400 uppercase tracking-widest">

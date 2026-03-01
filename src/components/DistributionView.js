@@ -293,7 +293,7 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div className={`relative group border - 2 border - dashed rounded - 2xl p - 6 text - center transition - all cursor - pointer ${appForm.photo ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 border-gray-200 hover:border-blue-400'} `}>
-                                    <input type="file" accept="image/*" onChange={e => setAppForm({ ...appForm, photo: e.target.files[0] })} className="absolute inset-0 opacity-0 cursor-pointer z-10" required />
+                                    <input type="file" accept="image/*,video/*" capture="environment" onChange={e => setAppForm({ ...appForm, photo: e.target.files[0] })} className="absolute inset-0 opacity-0 cursor-pointer z-10" required />
                                     <div className="text-sm font-bold text-gray-700 mb-1">📸 Application Photo</div>
                                     <div className="text-xs text-gray-400">{appForm.photo ? appForm.photo.name : 'Click to upload'}</div>
                                 </div>

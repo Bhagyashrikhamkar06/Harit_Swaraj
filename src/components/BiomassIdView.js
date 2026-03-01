@@ -285,7 +285,7 @@ const BiomassIdView = ({
                                     >
                                         <input
                                             type="file"
-                                            accept="image/*"
+                                            accept="image/*,video/*" capture="environment"
                                             onChange={(e) => handlePhotoChange(idx, e.target.files[0])}
                                             className="absolute inset-0 opacity-0 cursor-pointer z-10"
                                             required

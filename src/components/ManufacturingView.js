@@ -217,7 +217,7 @@ const ManufacturingView = ({ fetchWithAuth, fetchBatches, fetchDashboardData, th
                                 >
                                     <input
                                         type="file"
-                                        accept="image/*"
+                                        accept="image/*,video/*" capture="environment"
                                         onChange={(e) => setBatchForm({ ...batchForm, photo: e.target.files[0] })}
                                         className="absolute inset-0 opacity-0 cursor-pointer z-10"
                                     />
