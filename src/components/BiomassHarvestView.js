@@ -41,7 +41,16 @@ const BiomassHarvestView = ({ plots, fetchWithAuth, theme, onSuccess }) => {
                 body: formData
             });
 
-            if (!res.ok) throw new Error('Failed to record harvest');
+            if (!res.ok) {
+                let errorDetail = 'Failed to record harvest';
+                try {
+                    const errData = await res.json();
+                    if (errData.detail) {
+                        errorDetail = typeof errData.detail === 'string' ? errData.detail : (errData.detail[0]?.msg || errorDetail);
+                    }
+                } catch (e) { }
+                throw new Error(errorDetail);
+            }
 
             setMessage('SUCCESS: ✅ Harvest recorded and logged to ledger!');
             setHarvestForm({
@@ -77,7 +86,16 @@ const BiomassHarvestView = ({ plots, fetchWithAuth, theme, onSuccess }) => {
                 body: formData
             });
 
-            if (!res.ok) throw new Error('Failed to record preprocessing');
+            if (!res.ok) {
+                let errorDetail = 'Failed to record preprocessing';
+                try {
+                    const errData = await res.json();
+                    if (errData.detail) {
+                        errorDetail = typeof errData.detail === 'string' ? errData.detail : (errData.detail[0]?.msg || errorDetail);
+                    }
+                } catch (e) { }
+                throw new Error(errorDetail);
+            }
 
             setMessage('SUCCESS: ✅ Pre-processing operation verified!');
             setProcessForm({
@@ -274,7 +292,7 @@ const BiomassHarvestView = ({ plots, fetchWithAuth, theme, onSuccess }) => {
                                         <div className="space-y-2">
                                             <label className="text-sm font-bold text-gray-700">Source Harvest ID</label>
                                             <input
-                                                type="number"
+                                                type="text"
                                                 value={processForm.harvest_id}
                                                 onChange={(e) => setProcessForm({ ...processForm, harvest_id: e.target.value })}
                                                 className="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-[1.25rem] focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold"

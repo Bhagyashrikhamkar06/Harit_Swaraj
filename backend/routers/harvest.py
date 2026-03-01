@@ -122,7 +122,7 @@ async def delete_harvest(
 
 @router.post("/preprocess", response_model=PreprocessingResponse, status_code=status.HTTP_201_CREATED)
 async def preprocess_biomass(
-    harvest_id: int = Form(...),
+    harvest_id: str = Form(...),
     method: str = Form(...),
     photo_before: Optional[UploadFile] = File(None),
     photo_after: Optional[UploadFile] = File(None),
@@ -135,15 +135,20 @@ async def preprocess_biomass(
     if current_user.role != 'owner':
         raise HTTPException(status_code=403, detail="Only owners can record preprocessing")
         
-    harvest = db.query(BiomassHarvest).filter(BiomassHarvest.id == harvest_id).first()
-    if not harvest:
-        raise HTTPException(status_code=404, detail="Harvest record not found")
+    harvest = None
+    if harvest_id.isdigit():
+        harvest = db.query(BiomassHarvest).filter(BiomassHarvest.id == int(harvest_id)).first()
+    else:
+        harvest = db.query(BiomassHarvest).filter(BiomassHarvest.biomass_batch_id == harvest_id).first()
         
-    photo_before_path = await save_photo(photo_before, f"preprocess_{harvest_id}_before") if photo_before and photo_before.filename else None
-    photo_after_path = await save_photo(photo_after, f"preprocess_{harvest_id}_after") if photo_after and photo_after.filename else None
+    if not harvest:
+        raise HTTPException(status_code=400, detail=f"Harvest ID '{harvest_id}' not found")
+        
+    photo_before_path = await save_photo(photo_before, f"preprocess_{harvest.id}_before") if photo_before and photo_before.filename else None
+    photo_after_path = await save_photo(photo_after, f"preprocess_{harvest.id}_after") if photo_after and photo_after.filename else None
     
     preprocess = BiomassPreprocessing(
-        harvest_id=harvest_id,
+        harvest_id=harvest.id,
         method=method,
         photo_before_path=photo_before_path,
         photo_after_path=photo_after_path

@@ -37,7 +37,14 @@ const TechnicalOperationsView = ({ fetchWithAuth, harvests, batches, theme }) =>
                 body: formData
             });
 
-            if (!res.ok) throw new Error('Failed to record pre-processing');
+            if (!res.ok) {
+                let errorDetail = 'Failed to record pre-processing';
+                try {
+                    const errData = await res.json();
+                    if (errData.detail) errorDetail = typeof errData.detail === 'string' ? errData.detail : (errData.detail[0]?.msg || errorDetail);
+                } catch (e) { }
+                throw new Error(errorDetail);
+            }
             setMessage('SUCCESS: ✅ Pre-processing step verified and recorded!');
             setPreForm({ harvest_id: '', method: 'Drying', photo_before: null, photo_after: null });
         } catch (err) {
@@ -65,7 +72,14 @@ const TechnicalOperationsView = ({ fetchWithAuth, harvests, batches, theme }) =>
                 body: formData
             });
 
-            if (!res.ok) throw new Error('Failed to record unburnable process');
+            if (!res.ok) {
+                let errorDetail = 'Failed to record unburnable process';
+                try {
+                    const errData = await res.json();
+                    if (errData.detail) errorDetail = typeof errData.detail === 'string' ? errData.detail : (errData.detail[0]?.msg || errorDetail);
+                } catch (e) { }
+                throw new Error(errorDetail);
+            }
             setMessage('SUCCESS: ✅ Biochar has been certified as unburnable!');
             setUnburnForm({ batch_id: '', method: 'Clay Mixing', biochar_kg: '', additive_kg: '', photo: null });
         } catch (err) {

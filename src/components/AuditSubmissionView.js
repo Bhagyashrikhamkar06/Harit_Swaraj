@@ -57,7 +57,14 @@ const AuditSubmissionView = ({ fetchWithAuth, plots, theme }) => {
                 body: formData
             });
 
-            if (!res.ok) throw new Error('Failed to submit audit');
+            if (!res.ok) {
+                let errorDetail = 'Failed to submit audit';
+                try {
+                    const errData = await res.json();
+                    if (errData.detail) errorDetail = typeof errData.detail === 'string' ? errData.detail : (errData.detail[0]?.msg || errorDetail);
+                } catch (e) { }
+                throw new Error(errorDetail);
+            }
             setMessage('SUCCESS: ✅ Independent Audit Report successfully filed and timestamped.');
             setForm({ plot_id: '', satellite_land_use: 'Agricultural Land', observed_land_use: 'Agricultural Land', facility_location_check: true, inbound_biomass_data: '', actual_biomass_data: '', biochar_production_data: '', application_plot_id: '', biochar_presence_verified: false, predicted_quantity_per_ha: '', photos: [] });
         } catch (err) {
