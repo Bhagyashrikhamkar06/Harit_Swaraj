@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Settings, ShieldCheck, CheckCircle, AlertTriangle, Upload, Flame, Box, Droplets, Trash2, ArrowRight } from 'lucide-react';
+import MediaUploader from './MediaUploader';
 
 const TechnicalOperationsView = ({ fetchWithAuth, harvests, batches, theme }) => {
     const [submitting, setSubmitting] = useState(false);
@@ -155,16 +156,20 @@ const TechnicalOperationsView = ({ fetchWithAuth, harvests, batches, theme }) =>
                             </div>
                             <div className="space-y-6">
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className={`relative aspect-square border-2 border-dashed rounded-[1.5rem] p-4 flex flex-col items-center justify-center transition-all ${preForm.photo_before ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
-                                        <input type="file" accept="image/*,video/*" capture="environment" onChange={e => setPreForm({ ...preForm, photo_before: e.target.files[0] })} className="absolute inset-0 opacity-0 cursor-pointer z-10" required />
-                                        <Upload className={`mb-2 ${preForm.photo_before ? 'text-green-500' : 'text-gray-300'}`} />
-                                        <span className="text-[10px] font-black text-gray-500 uppercase">Input State</span>
-                                    </div>
-                                    <div className={`relative aspect-square border-2 border-dashed rounded-[1.5rem] p-4 flex flex-col items-center justify-center transition-all ${preForm.photo_after ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
-                                        <input type="file" accept="image/*,video/*" capture="environment" onChange={e => setPreForm({ ...preForm, photo_after: e.target.files[0] })} className="absolute inset-0 opacity-0 cursor-pointer z-10" required />
-                                        <Upload className={`mb-2 ${preForm.photo_after ? 'text-green-500' : 'text-gray-300'}`} />
-                                        <span className="text-[10px] font-black text-gray-500 uppercase">Process Output</span>
-                                    </div>
+                                    <MediaUploader
+                                        file={preForm.photo_before}
+                                        onChange={f => setPreForm({ ...preForm, photo_before: f })}
+                                        label="Input State"
+                                        required={true}
+                                        className="aspect-square"
+                                    />
+                                    <MediaUploader
+                                        file={preForm.photo_after}
+                                        onChange={f => setPreForm({ ...preForm, photo_after: f })}
+                                        label="Process Output"
+                                        required={true}
+                                        className="aspect-square"
+                                    />
                                 </div>
                                 <button type="submit" disabled={submitting} className="w-full h-14 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-green-600 hover:shadow-xl hover:shadow-green-200 transition-all flex items-center justify-center gap-3 disabled:opacity-50">
                                     {submitting ? 'Synchronizing...' : <><span>Log Process</span> <ArrowRight size={18} /></>}
@@ -196,12 +201,13 @@ const TechnicalOperationsView = ({ fetchWithAuth, harvests, batches, theme }) =>
                                 </div>
                             </div>
                             <div className="flex flex-col md:flex-row gap-8">
-                                <div className={`flex-1 relative border-2 border-dashed rounded-[2rem] p-10 flex flex-col items-center justify-center transition-all ${unburnForm.photo ? 'bg-emerald-50 border-emerald-200' : 'bg-gray-50 border-gray-200'}`}>
-                                    <input type="file" accept="image/*,video/*" capture="environment" onChange={e => setUnburnForm({ ...unburnForm, photo: e.target.files[0] })} className="absolute inset-0 opacity-0 cursor-pointer z-10" required />
-                                    <Upload className={`mb-4 ${unburnForm.photo ? 'text-emerald-500' : 'text-gray-300'}`} size={40} />
-                                    <h4 className="font-bold text-gray-900">Final Verification Photo</h4>
-                                    <p className="text-xs text-gray-400 mt-1 uppercase font-black">{unburnForm.photo ? unburnForm.photo.name : 'Upload after mixing'}</p>
-                                </div>
+                                <MediaUploader
+                                    file={unburnForm.photo}
+                                    onChange={f => setUnburnForm({ ...unburnForm, photo: f })}
+                                    label="Final Verification Photo"
+                                    required={true}
+                                    className="flex-1 p-10"
+                                />
                                 <div className="md:w-1/3 flex flex-col justify-center gap-4">
                                     <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100">
                                         <h5 className="font-black text-xs text-emerald-700 uppercase mb-2 tracking-widest">Protocol Check</h5>

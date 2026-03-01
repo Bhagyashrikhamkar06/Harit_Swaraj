@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ShieldAlert, Globe, Factory, MapPin, CheckCircle, AlertTriangle, Upload, Camera, Search, ChevronRight, Info } from 'lucide-react';
+import MediaUploader from './MediaUploader';
 
 const AuditSubmissionView = ({ fetchWithAuth, plots, theme }) => {
     const [auditType, setAuditType] = useState('field'); // 'field', 'manufacturing', 'application'
@@ -229,14 +230,13 @@ const AuditSubmissionView = ({ fetchWithAuth, plots, theme }) => {
                                 <h3 className="font-black text-slate-900 uppercase tracking-widest text-[11px] italic">Auditable Multimedia Evidence</h3>
                             </div>
                             <div className="grid grid-cols-1 gap-4">
-                                <div className={`relative border-4 border-dashed rounded-[2rem] p-12 text-center transition-all ${form.photos.length > 0 ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-200'}`}>
-                                    <input type="file" multiple accept="image/*,video/*" capture="environment" onChange={handlePhotoChange} className="absolute inset-0 opacity-0 cursor-pointer z-10" required />
-                                    <Upload className={`mx-auto mb-4 ${form.photos.length > 0 ? 'text-green-600' : 'text-slate-300'}`} size={48} />
-                                    <h4 className="text-xl font-black text-slate-900 mb-2">Upload Visual Logs</h4>
-                                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
-                                        {form.photos.length > 0 ? `${form.photos.length} Photos Captured` : 'Min 4 photos required for field validation'}
-                                    </p>
-                                </div>
+                                <MediaUploader
+                                    file={form.photos}
+                                    onChange={(files) => setForm({ ...form, photos: files ? (Array.isArray(files) ? files : [files]) : [] })}
+                                    label="Upload Visual Logs (Min 4 Photos)"
+                                    required={true}
+                                    className="p-12 text-center"
+                                />
                             </div>
                         </section>
 

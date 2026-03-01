@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Package, Trash2, CheckCircle, AlertTriangle, Globe, MapPin } from 'lucide-react';
 import DataTable from './DataTable';
-
+import MediaUploader from './MediaUploader';
 const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, theme, onSuccess }) => {
     const [activeTab, setActiveTab] = useState('distribution');
     const [submitting, setSubmitting] = useState(false);
@@ -292,11 +292,12 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div className={`relative group border - 2 border - dashed rounded - 2xl p - 6 text - center transition - all cursor - pointer ${appForm.photo ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 border-gray-200 hover:border-blue-400'} `}>
-                                    <input type="file" accept="image/*,video/*" capture="environment" onChange={e => setAppForm({ ...appForm, photo: e.target.files[0] })} className="absolute inset-0 opacity-0 cursor-pointer z-10" required />
-                                    <div className="text-sm font-bold text-gray-700 mb-1">📸 Application Photo</div>
-                                    <div className="text-xs text-gray-400">{appForm.photo ? appForm.photo.name : 'Click to upload'}</div>
-                                </div>
+                                <MediaUploader
+                                    file={appForm.photo}
+                                    onChange={(f) => setAppForm({ ...appForm, photo: f })}
+                                    label="📸 Application Photo"
+                                    required={true}
+                                />
                                 <div className={`relative group border - 2 border - dashed rounded - 2xl p - 6 text - center transition - all cursor - pointer ${appForm.kml_file ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200 hover:border-green-400'} `}>
                                     <input type="file" accept=".kml" onChange={e => setAppForm({ ...appForm, kml_file: e.target.files[0] })} className="absolute inset-0 opacity-0 cursor-pointer z-10" required />
                                     <div className="text-sm font-bold text-gray-700 mb-1">🗺️ Applied Land KML</div>

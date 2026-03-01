@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Upload, MapPin, Camera, CheckCircle, AlertTriangle, Info, Map, Leaf, Scale, Move, ChevronRight, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import MediaUploader from './MediaUploader';
 
 const BiomassIdView = ({
     plotForm,
@@ -278,23 +279,13 @@ const BiomassIdView = ({
 
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 {[0, 1, 2, 3].map((idx) => (
-                                    <div
+                                    <MediaUploader
                                         key={idx}
-                                        className={`relative border-2 border-dashed rounded-2xl p-4 text-center transition-all ${plotForm.photos[idx] ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200 hover:border-green-500 hover:bg-white'
-                                            }`}
-                                    >
-                                        <input
-                                            type="file"
-                                            accept="image/*,video/*" capture="environment"
-                                            onChange={(e) => handlePhotoChange(idx, e.target.files[0])}
-                                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                                            required
-                                        />
-                                        <Camera className={`mx-auto mb-2 transition-colors ${plotForm.photos[idx] ? 'text-green-500' : 'text-gray-300'}`} size={20} />
-                                        <div className="text-[10px] font-bold text-gray-600 truncate px-1">
-                                            {plotForm.photos[idx] ? plotForm.photos[idx].name : `View ${idx + 1}`}
-                                        </div>
-                                    </div>
+                                        file={plotForm.photos[idx]}
+                                        onChange={(f) => handlePhotoChange(idx, f)}
+                                        label={`View ${idx + 1}`}
+                                        required={true}
+                                    />
                                 ))}
                             </div>
                             <div className="p-4 bg-blue-50/50 rounded-2xl flex items-start gap-3">

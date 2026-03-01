@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Truck, Upload, AlertTriangle, CheckCircle, Package, ArrowRight, MapPin, Navigation, Calendar, Info, ChevronRight, Fuel, ShieldCheck } from 'lucide-react';
+import MediaUploader from './MediaUploader';
 
 const TransportView = ({ fetchWithAuth, batches, distributions, harvests, theme, onSuccess }) => {
     const [submitting, setSubmitting] = useState(false);
@@ -276,36 +277,20 @@ const TransportView = ({ fetchWithAuth, batches, distributions, harvests, theme,
                                     <h3 className="font-bold text-gray-900 uppercase tracking-wider text-xs italic">Visual Proof of Custody</h3>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className={`relative group border-2 border-dashed rounded-[2rem] p-8 text-center transition-all cursor-pointer ${form.loading_photo ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 border-gray-200 hover:border-blue-400 hover:bg-blue-50/10'
-                                        }`}>
-                                        <input
-                                            type="file"
-                                            accept="image/*,video/*" capture="environment"
-                                            onChange={(e) => setForm({ ...form, loading_photo: e.target.files[0] })}
-                                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                                            required
-                                        />
-                                        <Upload className={`mx-auto mb-3 transition-transform group-hover:-translate-y-1 ${form.loading_photo ? 'text-blue-500' : 'text-gray-300'}`} size={32} />
-                                        <h4 className="font-bold text-gray-900 text-sm">Dispatch Loading</h4>
-                                        <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-widest">
-                                            {form.loading_photo ? form.loading_photo.name : 'Photo at Source'}
-                                        </p>
-                                    </div>
-                                    <div className={`relative group border-2 border-dashed rounded-[2rem] p-8 text-center transition-all cursor-pointer ${form.unloading_photo ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200 hover:border-green-400 hover:bg-green-50/10'
-                                        }`}>
-                                        <input
-                                            type="file"
-                                            accept="image/*,video/*" capture="environment"
-                                            onChange={(e) => setForm({ ...form, unloading_photo: e.target.files[0] })}
-                                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                                            required
-                                        />
-                                        <Upload className={`mx-auto mb-3 transition-transform group-hover:-translate-y-1 ${form.unloading_photo ? 'text-green-500' : 'text-gray-300'}`} size={32} />
-                                        <h4 className="font-bold text-gray-900 text-sm">Arrival Inspection</h4>
-                                        <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-widest">
-                                            {form.unloading_photo ? form.unloading_photo.name : 'Photo at Destination'}
-                                        </p>
-                                    </div>
+                                    <MediaUploader
+                                        file={form.loading_photo}
+                                        onChange={(f) => setForm({ ...form, loading_photo: f })}
+                                        label="Dispatch Loading"
+                                        required={true}
+                                        className="p-8"
+                                    />
+                                    <MediaUploader
+                                        file={form.unloading_photo}
+                                        onChange={(f) => setForm({ ...form, unloading_photo: f })}
+                                        label="Arrival Inspection"
+                                        required={true}
+                                        className="p-8"
+                                    />
                                 </div>
                             </section>
 

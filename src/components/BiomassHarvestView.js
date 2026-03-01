@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Leaf, Camera, Upload, AlertTriangle, CheckCircle, Info, ChevronRight, Zap, Target, Sliders, Scissors } from 'lucide-react';
+import MediaUploader from './MediaUploader';
 
 const BiomassHarvestView = ({ plots, fetchWithAuth, theme, onSuccess }) => {
     const [activeTab, setActiveTab] = useState('harvest'); // 'harvest' or 'preprocessing'
@@ -234,24 +235,14 @@ const BiomassHarvestView = ({ plots, fetchWithAuth, theme, onSuccess }) => {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         {[1, 2].map((num) => (
-                                            <div
+                                            <MediaUploader
                                                 key={num}
-                                                className={`relative group border-2 border-dashed rounded-[1.75rem] p-10 text-center transition-all cursor-pointer ${harvestForm[`photo_${num}`] ? 'bg-emerald-50 border-emerald-300' : 'bg-gray-50 border-gray-200 hover:border-emerald-400 hover:bg-emerald-50/10'
-                                                    }`}
-                                            >
-                                                <input
-                                                    type="file"
-                                                    accept="image/*,video/*" capture="environment"
-                                                    onChange={(e) => setHarvestForm({ ...harvestForm, [`photo_${num}`]: e.target.files[0] })}
-                                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                                                    required
-                                                />
-                                                <Upload className={`mx-auto mb-3 transition-transform group-hover:-translate-y-1 ${harvestForm[`photo_${num}`] ? 'text-emerald-500' : 'text-gray-300'}`} size={36} />
-                                                <h4 className="font-bold text-gray-900 text-sm italic">Capture Point {num}</h4>
-                                                <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-widest font-black">
-                                                    {harvestForm[`photo_${num}`] ? harvestForm[`photo_${num}`].name : 'Required for Verification'}
-                                                </p>
-                                            </div>
+                                                file={harvestForm[`photo_${num}`]}
+                                                onChange={(f) => setHarvestForm({ ...harvestForm, [`photo_${num}`]: f })}
+                                                label={`Capture Point ${num}`}
+                                                required={true}
+                                                className="p-10"
+                                            />
                                         ))}
                                     </div>
                                 </section>
@@ -326,36 +317,20 @@ const BiomassHarvestView = ({ plots, fetchWithAuth, theme, onSuccess }) => {
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className={`relative group border-2 border-dashed rounded-[1.75rem] p-10 text-center transition-all cursor-pointer ${processForm.photo_before ? 'bg-indigo-50 border-indigo-300' : 'bg-gray-50 border-gray-200 hover:border-indigo-400 hover:bg-indigo-50/10'
-                                            }`}>
-                                            <input
-                                                type="file"
-                                                accept="image/*,video/*" capture="environment"
-                                                onChange={(e) => setProcessForm({ ...processForm, photo_before: e.target.files[0] })}
-                                                className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                                                required
-                                            />
-                                            <Upload className={`mx-auto mb-3 transition-transform group-hover:-translate-y-1 ${processForm.photo_before ? 'text-indigo-500' : 'text-gray-300'}`} size={36} />
-                                            <h4 className="font-bold text-gray-900 text-sm italic">Input Material</h4>
-                                            <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-widest font-black">
-                                                {processForm.photo_before ? processForm.photo_before.name : 'Photo: Before Treatment'}
-                                            </p>
-                                        </div>
-                                        <div className={`relative group border-2 border-dashed rounded-[1.75rem] p-10 text-center transition-all cursor-pointer ${processForm.photo_after ? 'bg-indigo-50 border-indigo-300' : 'bg-gray-50 border-gray-200 hover:border-indigo-400 hover:bg-indigo-50/10'
-                                            }`}>
-                                            <input
-                                                type="file"
-                                                accept="image/*,video/*" capture="environment"
-                                                onChange={(e) => setProcessForm({ ...processForm, photo_after: e.target.files[0] })}
-                                                className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                                                required
-                                            />
-                                            <Upload className={`mx-auto mb-3 transition-transform group-hover:-translate-y-1 ${processForm.photo_after ? 'text-indigo-500' : 'text-gray-300'}`} size={36} />
-                                            <h4 className="font-bold text-gray-900 text-sm italic">Output Result</h4>
-                                            <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-widest font-black">
-                                                {processForm.photo_after ? processForm.photo_after.name : 'Photo: After Treatment'}
-                                            </p>
-                                        </div>
+                                        <MediaUploader
+                                            file={processForm.photo_before}
+                                            onChange={(f) => setProcessForm({ ...processForm, photo_before: f })}
+                                            label="Input Material"
+                                            required={true}
+                                            className="p-10"
+                                        />
+                                        <MediaUploader
+                                            file={processForm.photo_after}
+                                            onChange={(f) => setProcessForm({ ...processForm, photo_after: f })}
+                                            label="Output Result"
+                                            required={true}
+                                            className="p-10"
+                                        />
                                     </div>
                                 </section>
 

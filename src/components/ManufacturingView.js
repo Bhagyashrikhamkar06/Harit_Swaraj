@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Factory, Upload, Camera, CheckCircle, Info, ChevronRight, Video, FileText, Droplets, Zap, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
+import MediaUploader from './MediaUploader';
 const ManufacturingView = ({ fetchWithAuth, fetchBatches, fetchDashboardData, theme, onSuccess }) => {
     const { t } = useTranslation();
     const [submitting, setSubmitting] = useState(false);
@@ -189,49 +189,20 @@ const ManufacturingView = ({ fetchWithAuth, fetchBatches, fetchDashboardData, th
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div
-                                    className={`relative group border-2 border-dashed rounded-3xl p-8 text-center transition-all cursor-pointer ${batchForm.video ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 border-gray-200 hover:border-blue-400 hover:bg-blue-50/10'
-                                        }`}
-                                >
-                                    <input
-                                        type="file"
-                                        accept="video/*"
-                                        onChange={(e) => setBatchForm({ ...batchForm, video: e.target.files[0] })}
-                                        className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                                    />
-                                    <div className="relative">
-                                        <div className={`mx-auto w-14 h-14 rounded-2xl flex items-center justify-center mb-3 transition-colors ${batchForm.video ? 'bg-blue-500 text-white' : 'bg-white text-blue-500'
-                                            }`}>
-                                            <Video size={28} />
-                                        </div>
-                                        <h4 className="font-bold text-gray-900 mb-1">Production Video</h4>
-                                        <p className="text-xs text-gray-500 px-4">
-                                            {batchForm.video ? `Selected: ${batchForm.video.name}` : 'Upload video of kiln operation for higher verification'}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div
-                                    className={`relative group border-2 border-dashed rounded-3xl p-8 text-center transition-all cursor-pointer ${batchForm.photo ? 'bg-purple-50 border-purple-300' : 'bg-gray-50 border-gray-200 hover:border-purple-400 hover:bg-purple-50/10'
-                                        }`}
-                                >
-                                    <input
-                                        type="file"
-                                        accept="image/*,video/*" capture="environment"
-                                        onChange={(e) => setBatchForm({ ...batchForm, photo: e.target.files[0] })}
-                                        className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                                    />
-                                    <div className="relative">
-                                        <div className={`mx-auto w-14 h-14 rounded-2xl flex items-center justify-center mb-3 transition-colors ${batchForm.photo ? 'bg-purple-500 text-white' : 'bg-white text-purple-500'
-                                            }`}>
-                                            <Camera size={28} />
-                                        </div>
-                                        <h4 className="font-bold text-gray-900 mb-1">Result Photo</h4>
-                                        <p className="text-xs text-gray-500 px-4">
-                                            {batchForm.photo ? `Selected: ${batchForm.photo.name}` : 'Upload photo of the produced biochar cooling'}
-                                        </p>
-                                    </div>
-                                </div>
+                                <MediaUploader
+                                    file={batchForm.video}
+                                    onChange={(f) => setBatchForm({ ...batchForm, video: f })}
+                                    label="Production Video"
+                                    accept="video/*"
+                                    className="p-8"
+                                />
+                                <MediaUploader
+                                    file={batchForm.photo}
+                                    onChange={(f) => setBatchForm({ ...batchForm, photo: f })}
+                                    label="Result Photo"
+                                    accept="image/*,video/*"
+                                    className="p-8"
+                                />
                             </div>
                         </section>
 

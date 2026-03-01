@@ -114,7 +114,7 @@ const ProfileView = ({ currentUser, fetchWithAuth, showToast, theme, onUserUpdat
                             <input
                                 ref={fileInputRef}
                                 type="file"
-                                accept="image/*,video/*" capture="environment"
+                                accept="image/*,video/*"
                                 className="hidden"
                                 onChange={handlePhotoChange}
                             />
