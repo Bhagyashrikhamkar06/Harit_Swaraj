@@ -95,7 +95,7 @@ const BiomassIdView = ({
                             <Leaf size={20} className="text-white" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-semibold text-white">Biomass Registration</h2>
+                            <h2 className="text-lg font-semibold text-white">Biomass Identification</h2>
                             <p className="text-sm text-green-200">Register land parcels with geospatial data</p>
                         </div>
                     </div>
