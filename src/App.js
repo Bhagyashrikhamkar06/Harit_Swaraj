@@ -1644,6 +1644,7 @@ const HaritSwarajMRV = () => {
                 batches={biocharBatches}
                 distributions={distributions}
                 harvests={harvests}
+                transports={transports}
                 fetchBatches={fetchBatches}
                 fetchDashboardData={fetchDashboardData}
                 onDelete={handleDeleteDistribution}

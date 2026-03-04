@@ -111,6 +111,7 @@ const SupplyChainWizard = (props) => {
                     ...baseProps,
                     plotForm: props.plotForm,
                     setPlotForm: props.setPlotForm,
+                    plots: props.plots,
                     refreshData: () => {
                         if (props.refreshData) props.refreshData();
                         handleSuccess();
@@ -119,18 +120,21 @@ const SupplyChainWizard = (props) => {
             case 'harvest':
                 return {
                     ...baseProps,
-                    plots: props.plots
+                    plots: props.plots,
+                    harvests: props.harvests
                 };
             case 'transport':
                 return {
                     ...baseProps,
                     batches: props.batches,
                     distributions: props.distributions,
-                    harvests: props.harvests
+                    harvests: props.harvests,
+                    transports: props.transports
                 };
             case 'manufacturing':
                 return {
                     ...baseProps,
+                    batches: props.batches,
                     fetchBatches: props.fetchBatches,
                     fetchDashboardData: props.fetchDashboardData,
                     // Note: ManufacturingView uses these fetch functions to refresh data

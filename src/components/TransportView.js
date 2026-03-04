@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Truck, Upload, AlertTriangle, CheckCircle, Package, ArrowRight, MapPin, Navigation, Calendar, Info, ChevronRight, Fuel, ShieldCheck } from 'lucide-react';
 import MediaUploader from './MediaUploader';
 
-const TransportView = ({ fetchWithAuth, batches, distributions, harvests, theme, onSuccess }) => {
+const TransportView = ({ fetchWithAuth, transports = [], batches = [], distributions = [], harvests = [], theme, onSuccess }) => {
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState('');
     const [type, setType] = useState('inbound'); // 'inbound' or 'outbound'
 
     const [form, setForm] = useState({
-        shipment_id: `SHP-${Math.floor(1000 + Math.random() * 9000)}`,
+        shipment_id: '',
         vehicle_type: 'Truck',
         vehicle_number: '',
         mileage: '',
@@ -20,6 +20,12 @@ const TransportView = ({ fetchWithAuth, batches, distributions, harvests, theme,
         loading_photo: null,
         unloading_photo: null
     });
+
+    useEffect(() => {
+        if (!form.shipment_id || form.shipment_id.length > 7) {
+            setForm(prev => ({ ...prev, shipment_id: `SHP-${101 + transports.length}` }));
+        }
+    }, [transports.length]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -62,7 +68,7 @@ const TransportView = ({ fetchWithAuth, batches, distributions, harvests, theme,
 
             setMessage('SUCCESS: ✅ Transport record saved and synchronized!');
             setForm({
-                shipment_id: `SHP-${Math.floor(1000 + Math.random() * 9000)}`,
+                shipment_id: `SHP-${101 + transports.length + 1}`,
                 vehicle_type: 'Truck',
                 vehicle_number: '',
                 mileage: '',

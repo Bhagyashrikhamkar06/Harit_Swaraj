@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Upload, MapPin, Camera, CheckCircle, AlertTriangle, Info, Map, Leaf, Scale, Move, ChevronRight, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import MediaUploader from './MediaUploader';
@@ -8,11 +8,18 @@ const BiomassIdView = ({
     setPlotForm,
     fetchWithAuth,
     refreshData,
-    theme
+    theme,
+    plots = []
 }) => {
     const { t } = useTranslation();
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState('');
+
+    useEffect(() => {
+        if (!plotForm.plot_id || plotForm.plot_id.length > 7) {
+            setPlotForm(prev => ({ ...prev, plot_id: `PLT-${101 + plots.length}` }));
+        }
+    }, [plots.length]);
 
     const handlePhotoChange = (index, file) => {
         const newPhotos = [...plotForm.photos];
@@ -62,7 +69,7 @@ const BiomassIdView = ({
 
             setMessage(`SUCCESS: ✅ Plot registered successfully! ID: ${data.plot_id}`);
             setPlotForm({
-                plot_id: `PLT-${Math.floor(1000 + Math.random() * 9000)}`,
+                plot_id: `PLT-${101 + plots.length + 1}`,
                 type: 'Wood',
                 species: '',
                 area: '',

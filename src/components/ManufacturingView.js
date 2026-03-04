@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Factory, Upload, Camera, CheckCircle, Info, ChevronRight, Video, FileText, Droplets, Zap, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import MediaUploader from './MediaUploader';
-const ManufacturingView = ({ fetchWithAuth, fetchBatches, fetchDashboardData, theme, onSuccess }) => {
+const ManufacturingView = ({ fetchWithAuth, batches = [], fetchBatches, fetchDashboardData, theme, onSuccess }) => {
     const { t } = useTranslation();
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState('');
     const [batchForm, setBatchForm] = useState({
-        batch_id: `BCH-${Math.floor(1000 + Math.random() * 9000)}`,
+        batch_id: '',
         biomass_input: '',
         biochar_output: '',
         kiln_type: 'Batch Retort Kiln',
@@ -15,6 +15,12 @@ const ManufacturingView = ({ fetchWithAuth, fetchBatches, fetchDashboardData, th
         video: null,
         photo: null
     });
+
+    useEffect(() => {
+        if (!batchForm.batch_id || batchForm.batch_id.length > 7) {
+            setBatchForm(prev => ({ ...prev, batch_id: `BCH-${101 + batches.length}` }));
+        }
+    }, [batches.length]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -49,7 +55,7 @@ const ManufacturingView = ({ fetchWithAuth, fetchBatches, fetchDashboardData, th
 
             setMessage(`SUCCESS: ✅ Batch recorded successfully! Output: ${data.biochar_output}kg`);
             setBatchForm({
-                batch_id: `BCH-${Math.floor(1000 + Math.random() * 9000)}`,
+                batch_id: `BCH-${101 + batches.length + 1}`,
                 biomass_input: '',
                 biochar_output: '',
                 kiln_type: 'Batch Retort Kiln',
