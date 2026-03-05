@@ -1563,7 +1563,7 @@ const HaritSwarajMRV = () => {
                   <Menu size={24} />
                 </button>
               )}
-              {activeModule !== 'technical-ops' && (
+              {activeModule !== 'technical-ops' && activeModule !== 'manufacturing' && (
                 <div className="flex flex-col">
                   <h1 className={`text-lg md:text-2xl font-black uppercase tracking-tighter italic ${theme === 'dark' ? 'text-white' : 'text-emerald-950'}`}>
                     {activeModule.replace('-', ' ')}

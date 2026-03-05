@@ -16,11 +16,15 @@ const ManufacturingView = ({ fetchWithAuth, batches = [], fetchBatches, fetchDas
         photo: null
     });
 
+    const generateBatchId = () => {
+        return `BCH-${Math.floor(1000 + Math.random() * 9000)}`;
+    };
+
     useEffect(() => {
-        if (!batchForm.batch_id || batchForm.batch_id.length > 7) {
-            setBatchForm(prev => ({ ...prev, batch_id: `BCH-${101 + batches.length}` }));
+        if (!batchForm.batch_id) {
+            setBatchForm(prev => ({ ...prev, batch_id: generateBatchId() }));
         }
-    }, [batches.length]);
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -55,7 +59,7 @@ const ManufacturingView = ({ fetchWithAuth, batches = [], fetchBatches, fetchDas
 
             setMessage(`SUCCESS: ✅ Batch recorded successfully! Output: ${data.biochar_output}kg`);
             setBatchForm({
-                batch_id: `BCH-${101 + batches.length + 1}`,
+                batch_id: generateBatchId(),
                 biomass_input: '',
                 biochar_output: '',
                 kiln_type: 'Batch Retort Kiln',
