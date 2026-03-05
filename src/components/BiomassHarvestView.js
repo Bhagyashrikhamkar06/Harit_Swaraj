@@ -15,9 +15,11 @@ const BiomassHarvestView = ({ plots = [], harvests = [], fetchWithAuth, theme, o
         photo_2: null
     });
 
+    const generateBatchId = () => `HRV-${Math.floor(1000 + Math.random() * 9000)}`;
+
     useEffect(() => {
         if (!harvestForm.biomass_batch_id) {
-            setHarvestForm(prev => ({ ...prev, biomass_batch_id: `HRV-${101 + harvests.length}` }));
+            setHarvestForm(prev => ({ ...prev, biomass_batch_id: generateBatchId() }));
         }
     }, [harvests.length]);
 
@@ -53,7 +55,7 @@ const BiomassHarvestView = ({ plots = [], harvests = [], fetchWithAuth, theme, o
 
             setMessage('SUCCESS: ✅ Harvest recorded and logged to ledger!');
             setHarvestForm({
-                biomass_batch_id: `HRV-${101 + harvests.length + 1}`,
+                biomass_batch_id: generateBatchId(),
                 plot_id: '',
                 actual_harvested_ton: '',
                 photo_1: null,
