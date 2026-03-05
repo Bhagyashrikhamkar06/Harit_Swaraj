@@ -33,6 +33,6 @@ files = {
     "unloading_photo": ("dummy2.jpg", io.BytesIO(b"dummy image data 2"), "image/jpeg"),
 }
 
-response = client.post("/transport/record", data=data, files=files, headers=headers)
+response = client.post("/transport/record", data=data, headers=headers)
 print("Status Code:", response.status_code)
 print("Response Body:", response.json())

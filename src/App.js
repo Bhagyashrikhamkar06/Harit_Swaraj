@@ -419,7 +419,7 @@ const HaritSwarajMRV = () => {
     'all-plots': t('biomass.all_plots'),
     'all-batches': t('manufacturing.all_batches'),
     dashboard: t('dashboard.title'),
-    'technical-ops': 'Process Optimization',
+    'technical-ops': 'Biomass pre-processing',
     'audit-submission': 'Independent Audit',
     'supply-chain': 'Supply Chain Workflow',
     settings: 'Profile & Settings'
@@ -1563,15 +1563,17 @@ const HaritSwarajMRV = () => {
                   <Menu size={24} />
                 </button>
               )}
-              <div className="flex flex-col">
-                <h1 className={`text-lg md:text-2xl font-black uppercase tracking-tighter italic ${theme === 'dark' ? 'text-white' : 'text-emerald-950'}`}>
-                  {activeModule.replace('-', ' ')}
-                </h1>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <p className="text-[10px] font-black text-emerald-600/60 uppercase tracking-widest leading-none">Terminal Session Active</p>
+              {activeModule !== 'technical-ops' && (
+                <div className="flex flex-col">
+                  <h1 className={`text-lg md:text-2xl font-black uppercase tracking-tighter italic ${theme === 'dark' ? 'text-white' : 'text-emerald-950'}`}>
+                    {activeModule.replace('-', ' ')}
+                  </h1>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <p className="text-[10px] font-black text-emerald-600/60 uppercase tracking-widest leading-none">Terminal Session Active</p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="flex items-center gap-4">

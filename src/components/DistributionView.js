@@ -269,14 +269,19 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-gray-700">Distribution ID</label>
-                                    <input
-                                        type="text"
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold"
+                                    <select
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold appearance-none cursor-pointer"
                                         value={appForm.distribution_id}
                                         onChange={e => setAppForm({ ...appForm, distribution_id: e.target.value })}
-                                        placeholder="Enter Distribution ID (e.g. 1)"
                                         required
-                                    />
+                                    >
+                                        <option value="">-- Select Distribution --</option>
+                                        {distributions && distributions.map(d => (
+                                            <option key={d.id} value={d.id}>
+                                                Dist #{d.id} - {d.customer_id}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-gray-700">Purpose</label>

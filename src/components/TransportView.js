@@ -5,8 +5,6 @@ import MediaUploader from './MediaUploader';
 const TransportView = ({ fetchWithAuth, transports = [], batches = [], distributions = [], harvests = [], theme, onSuccess }) => {
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState('');
-    const [type, setType] = useState('inbound'); // 'inbound' or 'outbound'
-
     const [form, setForm] = useState({
         shipment_id: '',
         vehicle_type: 'Truck',
@@ -15,8 +13,7 @@ const TransportView = ({ fetchWithAuth, transports = [], batches = [], distribut
         route_from: '',
         route_to: '',
         quantity_kg: '',
-        harvest_id: '',       // For inbound
-        distribution_id: '',  // For outbound
+        harvest_id: '',
         loading_photo: null,
         unloading_photo: null
     });
@@ -34,7 +31,7 @@ const TransportView = ({ fetchWithAuth, transports = [], batches = [], distribut
 
         try {
             const formData = new FormData();
-            formData.append('transport_type', type);
+            formData.append('transport_type', 'inbound');
             formData.append('shipment_id', form.shipment_id);
             formData.append('vehicle_type', form.vehicle_type);
             formData.append('vehicle_number', form.vehicle_number);
@@ -44,8 +41,7 @@ const TransportView = ({ fetchWithAuth, transports = [], batches = [], distribut
             if (form.route_to) formData.append('route_to', form.route_to);
             if (form.quantity_kg) formData.append('quantity_kg', form.quantity_kg);
 
-            if (type === 'inbound' && form.harvest_id) formData.append('harvest_id', form.harvest_id);
-            if (type === 'outbound' && form.distribution_id) formData.append('distribution_id', form.distribution_id);
+            if (form.harvest_id) formData.append('harvest_id', form.harvest_id);
 
             if (form.loading_photo) formData.append('loading_photo', form.loading_photo);
             if (form.unloading_photo) formData.append('unloading_photo', form.unloading_photo);
@@ -76,7 +72,6 @@ const TransportView = ({ fetchWithAuth, transports = [], batches = [], distribut
                 route_to: '',
                 quantity_kg: '',
                 harvest_id: '',
-                distribution_id: '',
                 loading_photo: null,
                 unloading_photo: null
             });
@@ -103,37 +98,13 @@ const TransportView = ({ fetchWithAuth, transports = [], batches = [], distribut
                             <p className="text-sm text-green-200">Record biomass and biochar shipments</p>
                         </div>
                     </div>
-                    <div className="flex gap-2">
-                        <button onClick={() => setType('inbound')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${type === 'inbound' ? 'bg-white text-green-700' : 'bg-white/10 text-white/80 hover:bg-white/20 hover:text-white'}`}>Inbound</button>
-                        <button onClick={() => setType('outbound')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${type === 'outbound' ? 'bg-white text-green-700' : 'bg-white/10 text-white/80 hover:bg-white/20 hover:text-white'}`}>Outbound</button>
+                    <div className="px-4 py-2 rounded-lg text-sm font-medium bg-white/10 text-white">
+                        Inbound Shipment
                     </div>
                 </div>
 
                 <div className="p-1">
-                    <div className="flex bg-gray-50 p-2 rounded-2xl m-6 gap-2 border border-gray-200">
-                        <button
-                            onClick={() => setType('inbound')}
-                            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${type === 'inbound'
-                                ? 'bg-white text-blue-600 shadow-md ring-1 ring-blue-100'
-                                : 'text-gray-500 hover:bg-gray-100'
-                                }`}
-                        >
-                            <Package size={18} />
-                            Inbound Shipment
-                        </button>
-                        <button
-                            onClick={() => setType('outbound')}
-                            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${type === 'outbound'
-                                ? 'bg-white text-green-600 shadow-md ring-1 ring-green-100'
-                                : 'text-gray-500 hover:bg-gray-100'
-                                }`}
-                        >
-                            <Navigation size={18} />
-                            Outbound Logistics
-                        </button>
-                    </div>
-
-                    <div className="px-8 pb-10">
+                    <div className="px-8 pb-10 pt-8">
                         {message && (
                             <div className={`p-5 rounded-2xl flex items-start gap-3 animate-scale-in shadow-sm mb-8 ${message.startsWith('SUCCESS') ? 'bg-green-50 text-green-800 border border-green-100' : 'bg-red-50 text-red-800 border border-red-100'
                                 }`}>
@@ -157,38 +128,28 @@ const TransportView = ({ fetchWithAuth, transports = [], batches = [], distribut
                                         <input
                                             type="text"
                                             value={form.shipment_id}
-                                            onChange={(e) => setForm({ ...form, shipment_id: e.target.value })}
-                                            className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-mono font-bold"
+                                            readOnly
+                                            className="w-full px-5 py-3 bg-emerald-50/30 border border-emerald-100 rounded-2xl outline-none font-mono font-bold text-emerald-700 cursor-not-allowed"
                                             placeholder="Auto-generated"
-                                            required
                                         />
                                     </div>
 
-                                    {type === 'inbound' ? (
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-bold text-gray-700">Source Harvest ID</label>
-                                            <input
-                                                type="text"
-                                                value={form.harvest_id}
-                                                onChange={(e) => setForm({ ...form, harvest_id: e.target.value })}
-                                                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold"
-                                                placeholder="Enter ID (e.g. BMB-... or 111)"
-                                                required
-                                            />
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-bold text-gray-700">Distribution ID</label>
-                                            <input
-                                                type="text"
-                                                value={form.distribution_id}
-                                                onChange={(e) => setForm({ ...form, distribution_id: e.target.value })}
-                                                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all font-bold"
-                                                placeholder="Enter ID"
-                                                required
-                                            />
-                                        </div>
-                                    )}
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-gray-700">Source Harvest ID</label>
+                                        <select
+                                            value={form.harvest_id}
+                                            onChange={(e) => setForm({ ...form, harvest_id: e.target.value })}
+                                            className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all font-bold appearance-none cursor-pointer"
+                                            required
+                                        >
+                                            <option value="">-- Select Harvest --</option>
+                                            {harvests && harvests.map(h => (
+                                                <option key={h.id || h.biomass_batch_id} value={h.id || h.biomass_batch_id}>
+                                                    {h.biomass_batch_id || h.id} ({h.actual_harvested_ton || 0} t)
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
                             </section>
 
@@ -204,7 +165,7 @@ const TransportView = ({ fetchWithAuth, transports = [], batches = [], distribut
                                         <select
                                             value={form.vehicle_type}
                                             onChange={(e) => setForm({ ...form, vehicle_type: e.target.value })}
-                                            className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all appearance-none cursor-pointer"
+                                            className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all appearance-none cursor-pointer"
                                         >
                                             <option value="Truck">Heavy Duty Truck</option>
                                             <option value="Mini Truck">Light Cargo Vehicle</option>
@@ -217,7 +178,7 @@ const TransportView = ({ fetchWithAuth, transports = [], batches = [], distribut
                                             type="text"
                                             value={form.vehicle_number}
                                             onChange={(e) => setForm({ ...form, vehicle_number: e.target.value })}
-                                            className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all uppercase placeholder:italic"
+                                            className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all uppercase placeholder:italic"
                                             placeholder="e.g. MH-12-AB-1234"
                                             required
                                         />
@@ -229,7 +190,7 @@ const TransportView = ({ fetchWithAuth, transports = [], batches = [], distribut
                                                 type="number"
                                                 value={form.quantity_kg}
                                                 onChange={(e) => setForm({ ...form, quantity_kg: e.target.value })}
-                                                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold"
+                                                className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all font-bold"
                                                 placeholder="0"
                                                 required
                                             />
@@ -252,7 +213,7 @@ const TransportView = ({ fetchWithAuth, transports = [], batches = [], distribut
                                             type="text"
                                             value={form.route_from}
                                             onChange={(e) => setForm({ ...form, route_from: e.target.value })}
-                                            className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
+                                            className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all"
                                             placeholder="Enter Origin"
                                             required
                                         />
@@ -263,7 +224,7 @@ const TransportView = ({ fetchWithAuth, transports = [], batches = [], distribut
                                             type="text"
                                             value={form.route_to}
                                             onChange={(e) => setForm({ ...form, route_to: e.target.value })}
-                                            className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
+                                            className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all"
                                             placeholder="Enter Target"
                                             required
                                         />
@@ -306,7 +267,7 @@ const TransportView = ({ fetchWithAuth, transports = [], batches = [], distribut
                                 className={`w-full group overflow-hidden relative rounded-2xl h-16 transition-all duration-300 active:scale-95 ${submitting ? 'bg-gray-400' : ''
                                     }`}
                             >
-                                <div className={`absolute inset-0 bg-gradient-to-r transition-transform group-hover:scale-105 ${type === 'inbound' ? 'from-blue-600 to-blue-500' : 'from-green-600 to-green-500'}`}></div>
+                                <div className={`absolute inset-0 bg-gradient-to-r transition-transform group-hover:scale-105 from-emerald-600 to-emerald-500`}></div>
                                 <div className="relative flex items-center justify-center text-white font-bold text-lg gap-3">
                                     {submitting ? (
                                         <>
@@ -316,7 +277,7 @@ const TransportView = ({ fetchWithAuth, transports = [], batches = [], distribut
                                     ) : (
                                         <>
                                             <Truck size={22} className="group-hover:animate-bounce" />
-                                            <span>Record {type === 'inbound' ? 'Inbound' : 'Outbound'} Logistics</span>
+                                            <span>Record Inbound Logistics</span>
                                             <ChevronRight size={20} className="transition-transform group-hover:translate-x-1" />
                                         </>
                                     )}

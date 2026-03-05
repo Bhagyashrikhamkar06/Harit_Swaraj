@@ -5,21 +5,11 @@ import MediaUploader from './MediaUploader';
 const TechnicalOperationsView = ({ fetchWithAuth, harvests, batches, theme }) => {
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState('');
-    const [tab, setTab] = useState('preprocess'); // 'preprocess' or 'unburnable'
-
     const [preForm, setPreForm] = useState({
         harvest_id: '',
         method: 'Drying',
         photo_before: null,
         photo_after: null
-    });
-
-    const [unburnForm, setUnburnForm] = useState({
-        batch_id: '',
-        method: 'Clay Mixing',
-        biochar_kg: '',
-        additive_kg: '',
-        photo: null
     });
 
     const handlePreSubmit = async (e) => {
@@ -55,40 +45,7 @@ const TechnicalOperationsView = ({ fetchWithAuth, harvests, batches, theme }) =>
         }
     };
 
-    const handleUnburnSubmit = async (e) => {
-        e.preventDefault();
-        setSubmitting(true);
-        setMessage('');
-        try {
-            const formData = new FormData();
-            formData.append('batch_id', unburnForm.batch_id);
-            formData.append('method', unburnForm.method);
-            formData.append('biochar_kg', unburnForm.biochar_kg);
-            formData.append('additive_kg', unburnForm.additive_kg);
-            if (unburnForm.photo) formData.append('photo', unburnForm.photo);
 
-            // Using the distribution router endpoint for unburnable logic
-            const res = await fetchWithAuth('/distribution/unburnable', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!res.ok) {
-                let errorDetail = 'Failed to record unburnable process';
-                try {
-                    const errData = await res.json();
-                    if (errData.detail) errorDetail = typeof errData.detail === 'string' ? errData.detail : (errData.detail[0]?.msg || errorDetail);
-                } catch (e) { }
-                throw new Error(errorDetail);
-            }
-            setMessage('SUCCESS: ✅ Biochar has been certified as unburnable!');
-            setUnburnForm({ batch_id: '', method: 'Clay Mixing', biochar_kg: '', additive_kg: '', photo: null });
-        } catch (err) {
-            setMessage(`ERROR: ❌ ${err.message}`);
-        } finally {
-            setSubmitting(false);
-        }
-    };
 
     return (
         <div className="max-w-4xl mx-auto animate-fade-in pb-12">
@@ -100,13 +57,9 @@ const TechnicalOperationsView = ({ fetchWithAuth, harvests, batches, theme }) =>
                             <Settings size={20} className="text-white" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-semibold text-white">Technical Operations</h2>
+                            <h2 className="text-lg font-semibold text-white">Biomass Pre-processing</h2>
                             <p className="text-sm text-green-200">Pre-processing and integrity workflows</p>
                         </div>
-                    </div>
-                    <div className="flex gap-2">
-                        <button onClick={() => setTab('preprocess')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'preprocess' ? 'bg-white text-green-700' : 'bg-white/10 text-white/80 hover:bg-white/20 hover:text-white'}`}>Pre-Process</button>
-                        <button onClick={() => setTab('unburnable')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'unburnable' ? 'bg-white text-green-700' : 'bg-white/10 text-white/80 hover:bg-white/20 hover:text-white'}`}>Unburnable</button>
                     </div>
                 </div>
 
@@ -124,102 +77,57 @@ const TechnicalOperationsView = ({ fetchWithAuth, harvests, batches, theme }) =>
                         </div>
                     )}
 
-                    {tab === 'preprocess' ? (
-                        <form onSubmit={handlePreSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
-                            <div className="space-y-6">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest pl-1">Target Harvest Batch</label>
-                                    <select
-                                        className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-[1.25rem] focus:bg-white focus:border-green-500 focus:ring-4 focus:ring-green-500/10 outline-none transition-all font-bold text-gray-800 shadow-inner appearance-none"
-                                        value={preForm.harvest_id}
-                                        onChange={e => setPreForm({ ...preForm, harvest_id: e.target.value })}
-                                        required
-                                    >
-                                        <option value="">Select ID</option>
-                                        {harvests?.map(h => <option key={h.id} value={h.id}>H-{h.id} ({h.biomass_batch_id})</option>)}
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest pl-1">Processing Method</label>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {['Drying', 'Chipping', 'Shredding', 'Screening'].map(m => (
-                                            <button
-                                                key={m} type="button"
-                                                onClick={() => setPreForm({ ...preForm, method: m })}
-                                                className={`py-3 rounded-xl text-sm font-black transition-all border-2 ${preForm.method === m ? 'bg-green-600 text-white border-green-600 shadow-lg' : 'bg-white text-gray-600 border-gray-100 hover:border-green-200'}`}
-                                            >
-                                                {m}
-                                            </button>
-                                        ))}
-                                    </div>
+                    <form onSubmit={handlePreSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
+                        <div className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-xs font-black text-gray-500 uppercase tracking-widest pl-1">Target Harvest Batch</label>
+                                <select
+                                    className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-[1.25rem] focus:bg-white focus:border-green-500 focus:ring-4 focus:ring-green-500/10 outline-none transition-all font-bold text-gray-800 shadow-inner appearance-none"
+                                    value={preForm.harvest_id}
+                                    onChange={e => setPreForm({ ...preForm, harvest_id: e.target.value })}
+                                    required
+                                >
+                                    <option value="">Select ID</option>
+                                    {harvests?.map(h => <option key={h.id} value={h.id}>H-{h.id} ({h.biomass_batch_id})</option>)}
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-black text-gray-500 uppercase tracking-widest pl-1">Processing Method</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {['Drying', 'Chipping', 'Shredding', 'Screening'].map(m => (
+                                        <button
+                                            key={m} type="button"
+                                            onClick={() => setPreForm({ ...preForm, method: m })}
+                                            className={`py-3 rounded-xl text-sm font-black transition-all border-2 ${preForm.method === m ? 'bg-green-600 text-white border-green-600 shadow-lg' : 'bg-white text-gray-600 border-gray-100 hover:border-green-200'}`}
+                                        >
+                                            {m}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
-                            <div className="space-y-6">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <MediaUploader
-                                        file={preForm.photo_before}
-                                        onChange={f => setPreForm({ ...preForm, photo_before: f })}
-                                        label="Input State"
-                                        required={true}
-                                        className="aspect-square"
-                                    />
-                                    <MediaUploader
-                                        file={preForm.photo_after}
-                                        onChange={f => setPreForm({ ...preForm, photo_after: f })}
-                                        label="Process Output"
-                                        required={true}
-                                        className="aspect-square"
-                                    />
-                                </div>
-                                <button type="submit" disabled={submitting} className="w-full h-14 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-green-600 hover:shadow-xl hover:shadow-green-200 transition-all flex items-center justify-center gap-3 disabled:opacity-50">
-                                    {submitting ? 'Synchronizing...' : <><span>Log Process</span> <ArrowRight size={18} /></>}
-                                </button>
-                            </div>
-                        </form>
-                    ) : (
-                        <form onSubmit={handleUnburnSubmit} className="space-y-8">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest pl-1">Biochar Source</label>
-                                    <select
-                                        className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-bold text-gray-800"
-                                        value={unburnForm.batch_id}
-                                        onChange={e => setUnburnForm({ ...unburnForm, batch_id: e.target.value })}
-                                        required
-                                    >
-                                        <option value="">Select Batch</option>
-                                        {batches?.map(b => <option key={b.id} value={b.batch_id}>{b.batch_id}</option>)}
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest pl-1">Biochar Qty (kg)</label>
-                                    <input type="number" step="0.1" className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-bold" value={unburnForm.biochar_kg} onChange={e => setUnburnForm({ ...unburnForm, biochar_kg: e.target.value })} required placeholder="0.0" />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-500 uppercase tracking-widest pl-1">Clay Additive (kg)</label>
-                                    <input type="number" step="0.1" className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-bold" value={unburnForm.additive_kg} onChange={e => setUnburnForm({ ...unburnForm, additive_kg: e.target.value })} required placeholder="0.0" />
-                                </div>
-                            </div>
-                            <div className="flex flex-col md:flex-row gap-8">
+                        </div>
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
                                 <MediaUploader
-                                    file={unburnForm.photo}
-                                    onChange={f => setUnburnForm({ ...unburnForm, photo: f })}
-                                    label="Final Verification Photo"
+                                    file={preForm.photo_before}
+                                    onChange={f => setPreForm({ ...preForm, photo_before: f })}
+                                    label="Input State"
                                     required={true}
-                                    className="flex-1 p-10"
+                                    className="aspect-square"
                                 />
-                                <div className="md:w-1/3 flex flex-col justify-center gap-4">
-                                    <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100">
-                                        <h5 className="font-black text-xs text-emerald-700 uppercase mb-2 tracking-widest">Protocol Check</h5>
-                                        <p className="text-[10px] leading-relaxed text-emerald-900/70 font-bold italic">Verification of unburnable state ensures credits meet the permanence requirements for CDR markets.</p>
-                                    </div>
-                                    <button type="submit" disabled={submitting} className="w-full py-6 bg-emerald-600 text-white rounded-[2rem] font-black uppercase tracking-widest hover:scale-[1.02] shadow-xl shadow-emerald-200 transition-all flex items-center justify-center gap-2">
-                                        {submitting ? 'Certifying...' : <><ShieldCheck size={20} /> <span>Submit for Audit</span></>}
-                                    </button>
-                                </div>
+                                <MediaUploader
+                                    file={preForm.photo_after}
+                                    onChange={f => setPreForm({ ...preForm, photo_after: f })}
+                                    label="Process Output"
+                                    required={true}
+                                    className="aspect-square"
+                                />
                             </div>
-                        </form>
-                    )}
+                            <button type="submit" disabled={submitting} className="w-full h-14 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-green-600 hover:shadow-xl hover:shadow-green-200 transition-all flex items-center justify-center gap-3 disabled:opacity-50">
+                                {submitting ? 'Synchronizing...' : <><span>Log Process</span> <ArrowRight size={18} /></>}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

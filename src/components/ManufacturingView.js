@@ -112,10 +112,9 @@ const ManufacturingView = ({ fetchWithAuth, batches = [], fetchBatches, fetchDas
                                     <input
                                         type="text"
                                         value={batchForm.batch_id}
-                                        onChange={(e) => setBatchForm({ ...batchForm, batch_id: e.target.value })}
-                                        className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all font-medium"
-                                        placeholder="e.g. BCH-005"
-                                        required
+                                        readOnly
+                                        className="w-full px-5 py-3 bg-green-50/30 border border-green-100 rounded-2xl outline-none font-mono font-bold text-green-700 cursor-not-allowed"
+                                        placeholder="Auto-generated"
                                     />
                                 </div>
 
