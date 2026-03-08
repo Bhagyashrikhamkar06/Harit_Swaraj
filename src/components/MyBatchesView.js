@@ -42,11 +42,20 @@ const BatchStatusBadge = ({ status, mlResult }) => {
     );
 };
 
-const MyBatchesView = ({ batches, onDelete, theme }) => {
+const MyBatchesView = ({ batches, transports = [], distributions = [], onDelete, theme, variant = 'default' }) => {
+    const safeDate = (dateString) => {
+        if (!dateString) return 'Pending';
+        const d = new Date(dateString);
+        return isNaN(d.getTime()) ? 'Pending' : d.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    };
     const columns = [
         {
             key: 'batch_id',
-            label: 'Batch ID',
+            label: 'Biochar Batch ID',
             mobileMain: true,
             render: (val) => (
                 <div className="flex items-center gap-2">
@@ -57,29 +66,45 @@ const MyBatchesView = ({ batches, onDelete, theme }) => {
                 </div>
             ),
         },
-        { key: 'biomass_input', label: 'Input (kg)', align: 'center', render: v => <span className="font-medium">{v}</span> },
-        { key: 'biochar_output', label: 'Output (kg)', align: 'center', render: v => <span className="font-bold text-gray-800">{v}</span> },
+        { key: 'biomass_input', label: 'Biomass used (kg)', align: 'center', render: v => <span className="font-medium">{v}</span> },
+        { key: 'species', label: 'Biomass Species', align: 'center', render: (v, row) => <span className="font-medium text-slate-600">{row.species || v || 'Mixed Wood'}</span> },
+        { key: 'biochar_output', label: 'Biochar quantity produced (kg)', align: 'center', render: v => <span className="font-bold text-emerald-700">{v}</span> },
         {
-            key: 'ratio',
-            label: 'Efficiency',
+            key: 'outbound_shipment',
+            label: 'Outbound Shipment done',
             align: 'center',
-            render: (v) => <EfficiencyBar ratio={v} />,
+            render: (_, row) => {
+                const isShipped = transports.some(t => t.type === 'outbound' && distributions.some(d => d.id === t.distribution_id && d.batch_id === row.id));
+                return <span className={`font-bold ${isShipped ? 'text-green-600' : 'text-slate-400'}`}>{isShipped ? 'Yes' : 'No'}</span>;
+            }
         },
         {
-            key: 'co2_removed',
-            label: 'CO₂ Rem. (kg)',
+            key: 'outbound_date',
+            label: 'Date of Outbound Shipment',
             align: 'center',
-            render: (v) => (
-                <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded-lg text-xs font-bold">
-                    {v?.toFixed(1) ?? '—'}
-                </span>
-            ),
+            render: (_, row) => {
+                const transport = transports.find(t => t.type === 'outbound' && distributions.some(d => d.id === t.distribution_id && d.batch_id === row.id));
+                return <span className="text-sm">{transport ? safeDate(transport.date) : 'Pending'}</span>;
+            }
         },
         {
-            key: 'status',
-            label: 'Status',
-            render: (v, row) => <BatchStatusBadge status={v} mlResult={row.ml_result} />,
+            key: 'biochar_application',
+            label: 'Biochar application Done',
+            align: 'center',
+            render: (_, row) => {
+                const hasApp = distributions.some(d => d.batch_id === row.id && d.applications && d.applications.length > 0);
+                return <span className={`font-bold ${hasApp ? 'text-green-600' : 'text-slate-400'}`}>{hasApp ? 'Yes' : 'No'}</span>;
+            }
         },
+        {
+            key: 'application_date',
+            label: 'Date of Biochar Application',
+            align: 'center',
+            render: (_, row) => {
+                const distWithApp = distributions.find(d => d.batch_id === row.id && d.applications && d.applications.length > 0);
+                return <span className="text-sm">{distWithApp && distWithApp.applications[0]?.created_at ? safeDate(distWithApp.applications[0].created_at) : 'Pending'}</span>;
+            }
+        }
     ];
 
     const actions = [
@@ -95,37 +120,36 @@ const MyBatchesView = ({ batches, onDelete, theme }) => {
         ? (batches.reduce((a, b) => a + (b.ratio || 0), 0) / batches.length * 100).toFixed(1)
         : '0.0';
 
-    return (
-        <div className="space-y-6 max-w-6xl mx-auto animate-fade-in pb-16">
-            <div className={`rounded-2xl overflow-hidden border shadow-sm ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}>
-                {/* Simple Green Header */}
-                <div className={`px-6 py-5 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${theme === 'dark' ? 'bg-green-900 border-slate-700' : 'bg-green-700 border-green-800'}`}>
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-white/10">
-                            <Package size={20} className="text-white" />
-                        </div>
-                        <div>
-                            <h2 className="text-lg font-semibold text-white">Manufacturing Batches</h2>
-                            <p className="text-sm text-green-200">Production yields and carbon metrics</p>
-                        </div>
-                    </div>
-                    <div className={`px-4 py-2 rounded-lg text-sm font-medium bg-white/10 text-white`}>
-                        Avg. Efficiency: {avgEfficiency}%
-                    </div>
-                </div>
+    if (variant === 'minimal') {
+        return (
+            <div className="w-full">
+                <DataTable
+                    accentColor="emerald"
+                    columns={columns}
+                    data={batches}
+                    actions={actions}
+                    pageSize={15}
+                    emptyMessage="No batches found. Start production to record your first batch."
+                    searchPlaceholder="Search by Batch ID or status…"
+                    variant="minimal"
+                />
+            </div>
+        );
+    }
 
+    return (
+        <div className="space-y-6 max-w-7xl mx-auto animate-fade-in pb-16 pt-2">
+            <div className={`rounded-2xl overflow-hidden border shadow-sm ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}>
                 <div className="p-2">
                     <DataTable
-                        title="Manufacturing Batches"
-                        subtitle="Detailed logs of production yields and carbon sequestration metrics."
-                        icon={<Package size={20} />}
-                        accentColor="blue"
+                        accentColor="emerald"
                         columns={columns}
                         data={batches}
                         actions={actions}
-                        pageSize={8}
+                        pageSize={15}
                         emptyMessage="No batches found. Start production to record your first batch."
                         searchPlaceholder="Search by Batch ID or status…"
+                        variant="default"
                     />
                 </div>
             </div>

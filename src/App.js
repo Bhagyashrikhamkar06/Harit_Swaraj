@@ -15,8 +15,19 @@ import DataTable from './components/DataTable';
 import TechnicalOperationsView from './components/TechnicalOperationsView';
 import AuditSubmissionView from './components/AuditSubmissionView';
 import SupplyChainWizard from './components/SupplyChainWizard';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
+const LeafletIcon = (color) => L.divIcon({
+  html: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="${color}" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3" fill="#ffffff" stroke="none" /></svg>`,
+  className: '',
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+});
 
+const BiomassIcon = LeafletIcon('#10b981'); // Green
+const ApplicationIcon = LeafletIcon('#3b82f6'); // Blue
 
 const HaritSwarajMRV = () => {
   // i18n hook
@@ -413,7 +424,7 @@ const HaritSwarajMRV = () => {
     harvest: 'Biomass Harvest',
     transport: 'Transportation',
     manufacturing: t('manufacturing.title'),
-    distribution: 'Distribution & Application',
+    distribution: 'Biochar Distribution & Application',
     'my-plots': t('biomass.my_plots'),
     'my-batches': t('manufacturing.my_batches'),
     'all-plots': t('biomass.all_plots'),
@@ -741,777 +752,121 @@ const HaritSwarajMRV = () => {
           </div>
         )}
 
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-gradient-to-br from-[#10b981] to-[#059669] rounded-3xl shadow-xl shadow-green-500/20 p-6 text-white transform hover:scale-[1.02] transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute -right-4 -top-4 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all" />
-            <div className="relative z-10 flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-green-100/80 text-[10px] font-bold uppercase tracking-[0.1em]">Total Biochar</p>
-                <p className="text-3xl font-black mt-1">
-                  {dashboardStats.total_biochar_produced?.toLocaleString()} <span className="text-lg font-medium opacity-70">kg</span>
-                </p>
+        {/* Dashboard Content */}
+        <div>
+          <h2 className="text-[26px] font-bold text-slate-800 mb-6 font-serif tracking-tight">Dashboard</h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {[
+              {
+                label: "Tons of Biomass Identified",
+                value: (biomassPlots.reduce((acc, p) => acc + (parseFloat(p.expected_biomass) || 0), 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
+                icon: <div className="text-green-700 bg-white p-2 rounded shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 14-4-4h2.5L8 5h8l-2.5 5H16z" /><path d="M12 14v6" /></svg></div>
+              },
+              {
+                label: "Tons of Biomass Transported",
+                value: (transports?.filter(t => t.type === 'inbound').reduce((acc, t) => acc + (parseFloat(t.quantity_kg) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
+              },
+              {
+                label: "Tons of Biomass Processed",
+                value: (biocharBatches?.reduce((acc, b) => acc + (parseFloat(b.biomass_input) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
+              },
+              {
+                label: "Tons of Biochar Manufactured",
+                value: (dashboardStats?.total_biochar_produced ? (dashboardStats.total_biochar_produced / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 }) : '0'),
+              },
+              {
+                label: "Tons of Biochar Shipped",
+                value: (transports?.filter(t => t.type === 'outbound').reduce((acc, t) => acc + (parseFloat(t.quantity_kg) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
+              },
+              {
+                label: "Tons of Biochar Applied",
+                value: (distributions?.filter(d => d.applications && d.applications.length > 0).reduce((acc, d) => acc + (parseFloat(d.quantity_kg) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
+              }
+            ].map((kpi, idx) => (
+              <div key={idx} className="bg-[#e6d5b8] rounded-lg p-6 shadow-sm border border-[#d8c3a0] relative overflow-hidden flex flex-col justify-between" style={{ minHeight: '130px' }}>
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-[15px] font-serif text-gray-800 leading-tight w-2/3">{kpi.label}</h3>
+                  {kpi.icon && kpi.icon}
+                </div>
+                <span className="text-3xl font-serif tracking-tight text-gray-900">{kpi.value}</span>
               </div>
-              <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md flex-shrink-0 ring-1 ring-white/30">
-                <Factory size={22} className="text-white" />
-              </div>
-            </div>
-            <div className="mt-6 flex items-center text-xs font-semibold text-green-100">
-              <div className="px-2 py-0.5 rounded-full bg-white/20 mr-2 flex items-center">
-                <Activity size={12} className="mr-1" />
-                <span>Active</span>
-              </div>
-              <span className="opacity-80 font-medium">Updated just now</span>
-            </div>
+            ))}
           </div>
 
-          <div className="bg-gradient-to-br from-[#a855f7] to-[#7e22ce] rounded-3xl shadow-xl shadow-purple-500/20 p-6 text-white transform hover:scale-[1.02] transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute -right-4 -top-4 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all" />
-            <div className="relative z-10 flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-purple-100/80 text-[10px] font-bold uppercase tracking-[0.1em]">CO₂ Sequestered</p>
-                <p className="text-3xl font-black mt-1">
-                  {dashboardStats.co2_sequestered?.toLocaleString()} <span className="text-lg font-medium opacity-70">kg</span>
-                </p>
-              </div>
-              <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md flex-shrink-0 ring-1 ring-white/30">
-                <Leaf size={22} className="text-white" />
-              </div>
-            </div>
-            <div className="mt-6 flex items-center text-xs font-semibold text-purple-100">
-              <div className="px-2 py-0.5 rounded-full bg-white/20 mr-2 flex items-center">
-                <Award size={12} className="mr-1" />
-                <span>Certified</span>
-              </div>
-              <span className="opacity-80 font-medium">Verification active</span>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-[#3b82f6] to-[#2563eb] rounded-3xl shadow-xl shadow-blue-500/20 p-6 text-white transform hover:scale-[1.02] transition-all duration-300 relative overflow-hidden group">
-            <div className="absolute -right-4 -top-4 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all" />
-            <div className="relative z-10 flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-blue-100/80 text-[10px] font-bold uppercase tracking-[0.1em]">Verified Batches</p>
-                <p className="text-3xl font-black mt-1">
-                  {dashboardStats.verified_batches}
-                </p>
-              </div>
-              <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md flex-shrink-0 ring-1 ring-white/30">
-                <CheckCircle size={22} className="text-white" />
-              </div>
-            </div>
-            <div className="mt-6">
-              <div className="w-full bg-white/20 rounded-full h-1.5 overflow-hidden">
-                <div
-                  className="bg-white rounded-full h-1.5 shadow-[0_0_8px_white]"
-                  style={{ width: `${(dashboardStats.verified_batches / (dashboardStats.total_batches || 1)) * 100}%` }}
+          {/* Map Section */}
+          <div className="relative rounded-lg border border-gray-200 overflow-hidden shadow-sm h-[400px] mb-12">
+            <div className="w-full h-full z-0">
+              <MapContainer center={[18.5204, 73.8567]} zoom={9} scrollWheelZoom={false} attributionControl={false} style={{ height: "100%", width: "100%", zIndex: 0 }}>
+                <TileLayer
+                  url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
                 />
-              </div>
-              <p className="text-[10px] font-bold text-blue-100 mt-2 uppercase tracking-wider opacity-80">{dashboardStats.verified_batches} of {dashboardStats.total_batches || 0} batches verified</p>
-            </div>
-          </div>
 
-          <div className={`${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'} rounded-3xl shadow-xl p-6 border transform hover:scale-[1.02] transition-all duration-300 relative overflow-hidden`}>
-            <div className="relative z-10 flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className={`${theme === 'dark' ? 'text-slate-400' : 'text-gray-500'} text-[10px] font-bold uppercase tracking-[0.1em]`}>Pending Actions</p>
-                <p className={`text-3xl font-black mt-1 ${theme === 'dark' ? 'text-slate-100' : 'text-gray-900'}`}>
-                  {dashboardStats.pending_batches || dashboardStats.pending_plots || 0}
-                </p>
-              </div>
-              <div className={`${theme === 'dark' ? 'bg-yellow-400/10 text-yellow-400' : 'bg-yellow-50 text-yellow-500'} p-3 rounded-2xl flex-shrink-0 ring-1 ring-yellow-400/20`}>
-                <Clock size={22} />
-              </div>
-            </div>
-            <div className="mt-6 flex items-center text-xs font-semibold text-yellow-600">
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-yellow-400/10 border border-yellow-400/20">
-                <AlertTriangle size={12} />
-                <span>Attention</span>
-              </div>
-            </div>
-          </div>
-        </div>
+                {biomassPlots.map((plot, idx) => {
+                  // Fallback to demo coordinates spread around Pune if exact lat/lng are missing
+                  const lat = plot.latitude || (18.5204 + (Math.random() - 0.5) * 0.4);
+                  const lng = plot.longitude || (73.8567 + (Math.random() - 0.5) * 0.4);
+                  return (
+                    <Marker key={`p-${idx}`} position={[lat, lng]} icon={BiomassIcon}>
+                      <Popup>
+                        <strong>Biomass Plot: {plot.plot_id}</strong><br />
+                        {plot.type} - {plot.species}<br />
+                        Expected: {plot.expected_biomass} tons
+                      </Popup>
+                    </Marker>
+                  );
+                })}
 
-        {/* Tabs */}
-        <div className={`flex gap-2 border-b px-4 rounded-t-3xl overflow-x-auto no-scrollbar ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-gray-200'}`}>
-          {[
-            { id: 'dashboard', icon: Home, label: t('dashboard.overview') },
-            { id: 'process', icon: ClipboardCheck, label: t('dashboard.process_status') },
-            { id: 'alldata', icon: Database, label: t('dashboard.all_data') }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-6 py-4 font-bold text-sm whitespace-nowrap border-b-2 transition-all duration-300 flex items-center gap-2 ${activeTab === tab.id
-                ? 'border-green-500 text-green-500'
-                : 'border-transparent text-gray-500 hover:text-green-400'
-                }`}
-            >
-              <tab.icon size={18} />
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Tab Content */}
-        {activeTab === 'dashboard' && (
-          <div className="space-y-6">
-            {/* Biomass Plots Section */}
-            <div className={`${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-gray-100'} rounded-3xl shadow-xl p-6 border`}>
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold">Biomass Plots</h3>
-                  <p className="text-sm text-gray-500 mt-1">Your registered biomass collection sites</p>
-                </div>
-                <div className="text-sm text-gray-600">
-                  Total: <span className="font-semibold">{biomassPlots.length}</span> plots
-                </div>
-              </div>
-
-              {biomassPlots.length === 0 ? (
-                <EmptyState
-                  icon={MapPin}
-                  title="No biomass plots registered yet"
-                  description="Start your carbon removal journey by registering your first biomass plot. Upload photos, add location details, and track your contribution to climate action."
-                  actionText="Register First Plot"
-                  onAction={() => setActiveModule('biomass-id')}
-                  secondaryActionText="Learn More"
-                  onSecondaryAction={() => window.open('https://docs.haritswaraj.com', '_blank')}
-                />
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {biomassPlots.map(plot => (
-                    <div key={plot.id} className={`${theme === 'dark' ? 'border-slate-700 hover:bg-slate-700/50' : 'border-gray-100 hover:shadow-lg'} border rounded-2xl p-4 transition-all duration-300`}>
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-green-600">{plot.plot_id}</h4>
-                          <p className="text-sm text-gray-600">{plot.type} - {plot.species}</p>
-                        </div>
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${plot.status === 'verified' ? 'bg-green-100 text-green-800' :
-                          plot.status === 'suspicious' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                          {plot.status}
-                        </span>
-                      </div>
-
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Area:</span>
-                          <span className="font-medium">{plot.area} acres</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Expected Biomass:</span>
-                          <span className="font-medium">{plot.expected_biomass} tons</span>
-                        </div>
-
-                        {plot.photos && plot.photos.length > 0 && (
-                          <div className="mt-3">
-                            <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
-                              <Camera size={12} /> Registered Photos:
-                            </p>
-                            <div className="flex gap-2 overflow-x-auto pb-2">
-                              {plot.photos.map((photo, pIdx) => (
-                                <img
-                                  key={pIdx}
-                                  src={`${apiUrl}/uploads/${photo.photo_path}`}
-                                  alt={`Plot ${plot.plot_id} - ${pIdx}`}
-                                  className="w-16 h-16 object-cover rounded-md border border-gray-200"
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="flex justify-between pt-2 border-t mt-2">
-                          <span className="text-gray-500 text-xs">Registered:</span>
-                          <span className="text-xs text-gray-600">{new Date(plot.created_at).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Recent Activity Timeline */}
-            <div className={`${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-gray-100'} rounded-3xl shadow-xl p-6 border`}>
-              <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-              <div className="space-y-4">
-                {[...biomassPlots.slice(0, 3).map(plot => ({
-                  type: 'plot',
-                  id: plot.plot_id,
-                  status: plot.status,
-                  timestamp: plot.created_at,
-                  description: `Biomass plot registered - ${plot.type}`
-                })), ...biocharBatches.slice(0, 3).map(batch => ({
-                  type: 'batch',
-                  id: batch.batch_id,
-                  status: batch.status,
-                  timestamp: batch.created_at,
-                  description: `Biochar batch produced - ${batch.biochar_output} kg`
-                }))].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 5).map((activity, idx) => (
-                  <div key={idx} className={`flex items-start gap-4 pb-4 border-b last:border-b-0 ${theme === 'dark' ? 'border-slate-700' : 'border-gray-50'}`}>
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${activity.type === 'plot' ? 'bg-blue-100' : 'bg-green-100'
-                      }`}>
-                      {activity.type === 'plot' ? <MapPin size={20} className="text-blue-600" /> : <Package size={20} className="text-green-600" />}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-medium text-gray-900">{activity.id}</p>
-                          <p className="text-sm text-gray-600">{activity.description}</p>
-                        </div>
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${activity.status === 'verified' ? 'bg-green-100 text-green-800' :
-                          activity.status === 'flagged' ? 'bg-red-100 text-red-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          }`}>
-                          {activity.status}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">{new Date(activity.timestamp).toLocaleString()}</p>
-                    </div>
-                  </div>
+                {distributions?.filter(d => d.applications && d.applications.length > 0).map((d, dIdx) => (
+                  <Marker key={`d-${dIdx}`} position={[18.5204 + (Math.random() - 0.5) * 0.3, 73.8567 + (Math.random() - 0.5) * 0.3]} icon={ApplicationIcon}>
+                    <Popup>
+                      <strong>Biochar Application: {d.distribution_id}</strong><br />
+                      Quantity: {d.quantity_kg} kg
+                    </Popup>
+                  </Marker>
                 ))}
+              </MapContainer>
+            </div>
+
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-row gap-2 z-[400]">
+              <button className="px-5 py-2.5 bg-white text-gray-900 font-bold text-[13px] shadow-lg cursor-default border border-gray-100 whitespace-nowrap"><span className="inline-block w-3 h-3 rounded-full bg-[#10b981] mr-2"></span>Biomass Locations</button>
+              <button className="px-5 py-2.5 bg-white text-gray-900 font-bold text-[13px] shadow-lg cursor-default border border-gray-100 whitespace-nowrap"><span className="inline-block w-3 h-3 rounded-full bg-[#3b82f6] mr-2"></span>Biochar Applications</button>
+            </div>
+          </div>
+
+          {/* Process Tables Stacked */}
+          <div className="space-y-12 pb-16">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-0 font-serif">Process Status: Biomass</h3>
+              <div className="-mx-2 pb-6">
+                <MyPlotsView
+                  plots={biomassPlots}
+                  harvests={harvests}
+                  transports={transports}
+                  batches={biocharBatches}
+                  onEdit={setEditingPlot}
+                  onDelete={handleDeletePlot}
+                  apiUrl={apiUrl}
+                  theme={theme}
+                  variant="minimal"
+                />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-0 font-serif -mt-4">Process Status: Biochar</h3>
+              <div className="-mx-2">
+                <MyBatchesView
+                  batches={biocharBatches}
+                  transports={transports}
+                  distributions={distributions}
+                  onDelete={handleDeleteBatch}
+                  theme={theme}
+                  variant="minimal"
+                />
               </div>
             </div>
           </div>
-        )}
-
-        {activeTab === 'process' && (
-          <div className={`${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-gray-100'} rounded-3xl shadow-xl p-6 border`}>
-            <h3 className="text-lg font-semibold mb-6">{t('dashboard.process_status')}</h3>
-
-            {/* Biochar Lifecycle Pipeline */}
-            <div className="mb-8">
-              <h4 className="font-medium text-gray-700 mb-4">Biochar Production Lifecycle</h4>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                {/* Stage 1: Biomass Collection */}
-                <div className="text-center">
-                  <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-2 ${biomassPlots.length > 0 ? 'bg-green-500' : 'bg-gray-300'
-                    }`}>
-                    <MapPin size={24} className="text-white" />
-                  </div>
-                  <p className="text-xs font-medium text-gray-700">Biomass Collection</p>
-                  <p className="text-lg font-bold text-green-600">{biomassPlots.length}</p>
-                  <p className="text-xs text-gray-500">plots</p>
-                </div>
-
-                {/* Stage 2: Quality Verification */}
-                <div className="text-center">
-                  <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-2 ${dashboardStats.verified_plots > 0 ? 'bg-green-500' : 'bg-gray-300'
-                    }`}>
-                    <CheckCircle size={24} className="text-white" />
-                  </div>
-                  <p className="text-xs font-medium text-gray-700">Plot Verification</p>
-                  <p className="text-lg font-bold text-green-600">{dashboardStats.verified_plots}</p>
-                  <p className="text-xs text-gray-500">verified</p>
-                </div>
-
-                {/* Stage 3: Pyrolysis Process */}
-                <div className="text-center">
-                  <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-2 ${biocharBatches.length > 0 ? 'bg-green-500' : 'bg-gray-300'
-                    }`}>
-                    <Flame size={24} className="text-white" />
-                  </div>
-                  <p className="text-xs font-medium text-gray-700">Pyrolysis</p>
-                  <p className="text-lg font-bold text-green-600">{biocharBatches.length}</p>
-                  <p className="text-xs text-gray-500">batches</p>
-                </div>
-
-                {/* Stage 4: Biochar Production */}
-                <div className="text-center">
-                  <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-2 ${dashboardStats.total_biochar_produced > 0 ? 'bg-green-500' : 'bg-gray-300'
-                    }`}>
-                    <Package size={24} className="text-white" />
-                  </div>
-                  <p className="text-xs font-medium text-gray-700">Production</p>
-                  <p className="text-lg font-bold text-green-600">{dashboardStats.total_biochar_produced?.toLocaleString()}</p>
-                  <p className="text-xs text-gray-500">kg</p>
-                </div>
-
-                {/* Stage 5: Quality Testing */}
-                <div className="text-center">
-                  <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-2 ${dashboardStats.verified_batches > 0 ? 'bg-green-500' : 'bg-gray-300'
-                    }`}>
-                    <ClipboardCheck size={24} className="text-white" />
-                  </div>
-                  <p className="text-xs font-medium text-gray-700">Testing</p>
-                  <p className="text-lg font-bold text-green-600">{dashboardStats.verified_batches}</p>
-                  <p className="text-xs text-gray-500">verified</p>
-                </div>
-
-                {/* Stage 6: Carbon Credits */}
-                <div className="text-center">
-                  <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-2 ${dashboardStats.co2_sequestered > 0 ? 'bg-green-500' : 'bg-gray-300'
-                    }`}>
-                    <Award size={24} className="text-white" />
-                  </div>
-                  <p className="text-xs font-medium text-gray-700">Carbon Credits</p>
-                  <p className="text-lg font-bold text-green-600">{(dashboardStats.co2_sequestered / 1000).toFixed(2)}</p>
-                  <p className="text-xs text-gray-500">tCO₂</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Active Batches Status */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                    <CheckCircle size={24} className="text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-green-700 font-medium">Verified Batches</p>
-                    <p className="text-2xl font-bold text-green-800">{dashboardStats.verified_batches}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
-                    <AlertTriangle size={24} className="text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-yellow-700 font-medium">Pending Review</p>
-                    <p className="text-2xl font-bold text-yellow-800">{dashboardStats.flagged_batches}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                    <TrendingUp size={24} className="text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-blue-700 font-medium">Total Production</p>
-                    <p className="text-2xl font-bold text-blue-800">{dashboardStats.total_batches}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-
-        {activeTab === 'alldata' && (
-          <div className="space-y-6">
-            {/* Biomass Plots — Advanced DataTable */}
-            <DataTable
-              title="All Biomass Plots"
-              subtitle="Complete list of registered biomass collection sites"
-              icon={<MapPin size={20} />}
-              accentColor="green"
-              data={biomassPlots}
-              pageSize={8}
-              emptyMessage="No biomass plots registered yet."
-              searchPlaceholder="Search plot ID, species, type…"
-              columns={[
-                {
-                  key: 'plot_id', label: 'Plot ID', mobileMain: true,
-                  render: v => <span className="font-bold text-green-700">{v}</span>
-                },
-                { key: 'type', label: 'Type' },
-                { key: 'species', label: 'Species' },
-                { key: 'area', label: 'Area (ac)', align: 'center' },
-                { key: 'expected_biomass', label: 'Biomass (t)', align: 'center' },
-                {
-                  key: 'status', label: 'Status',
-                  render: v => (
-                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${v === 'verified' ? 'bg-green-100 text-green-800' :
-                      v === 'suspicious' ? 'bg-orange-100 text-orange-800' :
-                        'bg-gray-100 text-gray-600'}`}>{v}</span>
-                  )
-                },
-                {
-                  key: 'created_at', label: 'Registered',
-                  render: v => <span className="text-xs text-gray-500">{new Date(v).toLocaleDateString()}</span>
-                },
-              ]}
-            />
-
-            {/* Biochar Batches — Advanced DataTable */}
-            <DataTable
-              title="All Biochar Batches"
-              subtitle="Complete production history with verification status"
-              icon={<Package size={20} />}
-              accentColor="blue"
-              data={biocharBatches}
-              pageSize={8}
-              emptyMessage="No biochar batches recorded yet."
-              searchPlaceholder="Search batch ID, kiln type, status…"
-              columns={[
-                {
-                  key: 'batch_id', label: 'Batch ID', mobileMain: true,
-                  render: v => <span className="font-bold text-blue-700">{v}</span>
-                },
-                { key: 'biomass_input', label: 'Biomass (kg)', align: 'center' },
-                {
-                  key: 'biochar_output', label: 'Biochar (kg)', align: 'center',
-                  render: v => <span className="font-bold">{v}</span>
-                },
-                {
-                  key: 'ratio', label: 'Ratio', align: 'center',
-                  render: v => <span>{v?.toFixed(2)}</span>
-                },
-                {
-                  key: 'co2_removed', label: 'CO₂ (kg)', align: 'center',
-                  render: v => <span className="text-green-700 font-semibold">{v?.toFixed(2)}</span>
-                },
-                {
-                  key: 'kiln_type', label: 'Kiln Type',
-                  render: v => <span className="text-xs bg-gray-100 px-2 py-0.5 rounded font-medium">{v || 'Standard'}</span>
-                },
-                {
-                  key: 'status', label: 'Status',
-                  render: v => (
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${v === 'verified' ? 'bg-green-100 text-green-800' :
-                      v === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'}`}>{v}</span>
-                  )
-                },
-                {
-                  key: 'created_at', label: 'Created',
-                  render: v => <span className="text-xs text-gray-500">{new Date(v).toLocaleDateString()}</span>
-                },
-              ]}
-            />
-
-            {/* Biomass Harvests — Advanced DataTable */}
-            <DataTable
-              title="Biomass Harvests"
-              subtitle="History of biomass collected from plots"
-              icon={<Leaf size={20} />}
-              accentColor="green"
-              data={harvests}
-              pageSize={8}
-              emptyMessage="No harvests recorded yet."
-              searchPlaceholder="Search harvest ID, plot…"
-              columns={[
-                {
-                  key: 'biomass_batch_id', label: 'Harvest ID', mobileMain: true,
-                  render: v => <span className="font-bold text-green-700">{v}</span>
-                },
-                { key: 'plot_id', label: 'Plot', render: v => `Plot #${v}` },
-                {
-                  key: 'actual_harvested_ton', label: 'Qty (tons)', align: 'center',
-                  render: v => <span className="font-bold">{v}</span>
-                },
-                {
-                  key: 'photo_path_1', label: 'Photos', sortable: false, noSearch: true,
-                  render: (v, row) => (
-                    <div className="flex gap-1">
-                      {v && <img src={`${apiUrl}/uploads/${v.split('/').pop()}`} className="w-9 h-9 object-cover rounded-lg border" alt="p1" />}
-                      {row.photo_path_2 && <img src={`${apiUrl}/uploads/${row.photo_path_2.split('/').pop()}`} className="w-9 h-9 object-cover rounded-lg border" alt="p2" />}
-                    </div>
-                  )
-                },
-                {
-                  key: 'created_at', label: 'Date',
-                  render: v => <span className="text-xs text-gray-500">{new Date(v).toLocaleDateString()}</span>
-                },
-              ]}
-            />
-
-            {/* Transport Logistics — Advanced DataTable */}
-            <DataTable
-              title="Logistics & Transport"
-              subtitle="Inbound and outbound transport records"
-              icon={<Truck size={20} />}
-              accentColor="blue"
-              data={transports}
-              pageSize={8}
-              emptyMessage="No transport records found."
-              searchPlaceholder="Search shipment ID, vehicle, route…"
-              columns={[
-                {
-                  key: 'shipment_id', label: 'Shipment ID', mobileMain: true,
-                  render: v => <span className="font-bold font-mono text-sm">{v}</span>
-                },
-                {
-                  key: 'transport_type', label: 'Type',
-                  render: v => (
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${v === 'inbound' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}>
-                      {v}
-                    </span>
-                  )
-                },
-                {
-                  key: 'vehicle_number', label: 'Vehicle',
-                  render: (v, row) => <div><div className="font-medium text-sm">{v}</div><div className="text-xs text-gray-400">{row.vehicle_type}</div></div>
-                },
-                {
-                  key: 'route_from', label: 'Route', noSearch: false,
-                  render: (v, row) => <span className="text-xs">{v} → {row.route_to}</span>
-                },
-                {
-                  key: 'quantity_kg', label: 'Qty (kg)', align: 'center',
-                  render: v => <span className="font-bold">{v}</span>
-                },
-                {
-                  key: 'loading_photo_path', label: 'Photos', sortable: false, noSearch: true,
-                  render: (v, row) => (
-                    <div className="flex gap-1">
-                      {v && <img src={`${apiUrl}/uploads/${v.split('/').pop()}`} className="w-9 h-9 object-cover rounded-lg border" alt="load" />}
-                      {row.unloading_photo_path && <img src={`${apiUrl}/uploads/${row.unloading_photo_path.split('/').pop()}`} className="w-9 h-9 object-cover rounded-lg border" alt="unload" />}
-                    </div>
-                  )
-                },
-              ]}
-            />
-          </div>
-        )}
-
-        {/* Biochar Batches Table - Enhanced (DataTable) */}
-        <DataTable
-          title="Biochar Batches"
-          subtitle="Click 'View Details' on any batch to see full information"
-          icon={<Package size={20} />}
-          accentColor="green"
-          data={biocharBatches}
-          pageSize={8}
-          emptyMessage="No biochar batches recorded yet."
-          searchPlaceholder="Search batch ID, kiln type, status…"
-          columns={[
-            {
-              key: 'batch_id', label: 'Batch ID', mobileMain: true,
-              render: v => <span className="font-bold text-green-700">{v}</span>
-            },
-            { key: 'biomass_input', label: 'Biomass (kg)', align: 'center' },
-            {
-              key: 'biochar_output', label: 'Biochar (kg)', align: 'center',
-              render: v => <span className="font-bold">{v}</span>
-            },
-            {
-              key: 'ratio', label: 'Ratio', align: 'center',
-              render: v => <span>{v?.toFixed(2)}</span>
-            },
-            {
-              key: 'co2_removed', label: 'CO₂ (kg)', align: 'center',
-              render: v => <span className="font-semibold text-green-700">{v?.toFixed(2)}</span>
-            },
-            {
-              key: 'kiln_type', label: 'Kiln Type',
-              render: v => <span className="text-xs bg-gray-100 px-2 py-0.5 rounded font-medium">{v || 'Standard'}</span>
-            },
-            {
-              key: 'status', label: 'Status',
-              render: v => (
-                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${v === 'verified' ? 'bg-green-100 text-green-800' :
-                  v === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'}`}>{v}</span>
-              )
-            },
-          ]}
-          actions={[
-            {
-              label: 'View Details',
-              icon: <span className="text-xs font-bold">→</span>,
-              colorClass: 'hover:!text-green-700 hover:!bg-green-50',
-              onClick: (row) => handleBatchClick(row),
-            }
-          ]}
-        />
-
-        {/* Batch Detail Modal */}
-        {showBatchModal && selectedBatch && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setShowBatchModal(false)}>
-            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-              {/* Modal Header */}
-              <div className="bg-gradient-to-r from-green-600 to-green-700 p-6 text-white">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold">Batch Details</h2>
-                    <p className="text-green-100 mt-1">{selectedBatch.batch_id}</p>
-                  </div>
-                  <button
-                    onClick={() => setShowBatchModal(false)}
-                    className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="width" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              {/* Modal Content */}
-              <div className="p-6 space-y-6">
-                {/* Production Information */}
-                <div>
-                  <h3 className={`text-lg font-bold mb-4 flex items-center gap-2 ${theme === 'dark' ? 'text-slate-100' : 'text-gray-900'}`}>
-                    <Package size={20} className="text-green-600" />
-                    Production Information
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div className={`${theme === 'dark' ? 'bg-slate-700/50 text-slate-100' : 'bg-gray-50 text-gray-900'} p-4 rounded-xl`}>
-                      <p className="text-sm text-gray-600">Biomass Input</p>
-                      <p className="text-2xl font-bold text-gray-900">{selectedBatch.biomass_input} kg</p>
-                    </div>
-                    <div className="bg-green-50 p-4 rounded-lg">
-                      <p className="text-sm text-gray-600">Biochar Output</p>
-                      <p className="text-2xl font-bold text-green-700">{selectedBatch.biochar_output} kg</p>
-                    </div>
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <p className="text-sm text-gray-600">Conversion Ratio</p>
-                      <p className="text-2xl font-bold text-blue-700">{selectedBatch.ratio.toFixed(2)}</p>
-                    </div>
-                    <div className="bg-purple-50 p-4 rounded-lg">
-                      <p className="text-sm text-gray-600">CO₂ Sequestered</p>
-                      <p className="text-2xl font-bold text-purple-700">{selectedBatch.co2_removed.toFixed(2)} kg</p>
-                    </div>
-                    <div className="bg-orange-50 p-4 rounded-lg">
-                      <p className="text-sm text-gray-600">Kiln Type</p>
-                      <p className="text-lg font-semibold text-orange-700">{selectedBatch.kiln_type || 'Standard Kiln'}</p>
-                    </div>
-                    <div className={`${theme === 'dark' ? 'bg-slate-700/50 text-slate-100' : 'bg-gray-50 text-gray-900'} p-4 rounded-xl`}>
-                      <p className="text-sm text-gray-600">Status</p>
-                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium mt-2 ${selectedBatch.status === 'verified' ? 'bg-green-100 text-green-800' :
-                        selectedBatch.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                        {selectedBatch.status.toUpperCase()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Photos & Media */}
-                {selectedBatch.photo_path && (
-                  <div>
-                    <h3 className={`text-lg font-bold mb-4 flex items-center gap-2 ${theme === 'dark' ? 'text-slate-100' : 'text-gray-900'}`}>
-                      <Camera size={20} className="text-green-600" />
-                      Photos & Media
-                    </h3>
-                    <div className={`${theme === 'dark' ? 'bg-slate-700/50 text-slate-100' : 'bg-gray-50 text-gray-900'} p-4 rounded-xl`}>
-                      <img
-                        src={`${apiUrl}/uploads/${selectedBatch.photo_path.split('/').pop()}`}
-                        alt="Batch"
-                        className="max-w-full h-auto rounded-lg shadow-sm border border-gray-200"
-                      />
-                      <p className="text-xs text-gray-500 mt-2 text-center">Batch Production Photo</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Quality Metrics */}
-                <div>
-                  <h3 className={`text-lg font-bold mb-4 flex items-center gap-2 ${theme === 'dark' ? 'text-slate-100' : 'text-gray-900'}`}>
-                    <CheckCircle size={20} className="text-green-600" />
-                    Quality Metrics
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className={`${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'} border p-4 rounded-xl`}>
-                      <p className="text-xs text-gray-500 uppercase">Carbon Content</p>
-                      <p className="text-xl font-bold text-gray-900 mt-1">Pending Analysis</p>
-                    </div>
-                    <div className={`${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'} border p-4 rounded-xl`}>
-                      <p className="text-xs text-gray-500 uppercase">pH Level</p>
-                      <p className="text-xl font-bold text-gray-900 mt-1">Verify in Field</p>
-                    </div>
-                    <div className={`${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'} border p-4 rounded-xl`}>
-                      <p className="text-xs text-gray-500 uppercase">Ash Content</p>
-                      <p className="text-xl font-bold text-gray-900 mt-1">QC Waiting</p>
-                    </div>
-                    <div className={`${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'} border p-4 rounded-xl`}>
-                      <p className="text-xs text-gray-500 uppercase">Moisture</p>
-                      <p className="text-xl font-bold text-gray-900 mt-1">Testing...</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Environmental Impact */}
-                <div>
-                  <h3 className={`text-lg font-bold mb-4 flex items-center gap-2 ${theme === 'dark' ? 'text-slate-100' : 'text-gray-900'}`}>
-                    <Leaf size={20} className="text-green-600" />
-                    Environmental Impact
-                  </h3>
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div>
-                        <p className="text-sm text-green-700 font-medium">Carbon Sequestration</p>
-                        <p className="text-3xl font-bold text-green-800 mt-2">{selectedBatch.co2_removed.toFixed(2)} kg CO₂</p>
-                        <p className="text-sm text-green-600 mt-2">Equivalent to planting {Math.round(selectedBatch.co2_removed / 21)} trees</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-green-700 font-medium">Carbon Credits</p>
-                        <p className="text-3xl font-bold text-green-800 mt-2">{(selectedBatch.co2_removed / 1000).toFixed(3)} tCO₂</p>
-                        <p className="text-sm text-green-600 mt-2">Verified carbon offset credits</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Production Timeline */}
-                <div>
-                  <h3 className={`text-lg font-bold mb-4 flex items-center gap-2 ${theme === 'dark' ? 'text-slate-100' : 'text-gray-900'}`}>
-                    <ClipboardCheck size={20} className="text-green-600" />
-                    Production Timeline
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                        <CheckCircle size={16} className="text-green-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Batch Created</p>
-                        <p className="text-sm text-gray-500">{new Date(selectedBatch.created_at).toLocaleString()}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                        <CheckCircle size={16} className="text-green-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Pyrolysis Completed</p>
-                        <p className="text-sm text-gray-500">Duration: 4-6 hours at 400-500°C</p>
-                      </div>
-                    </div>
-                    {selectedBatch.status === 'verified' && (
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                          <CheckCircle size={16} className="text-green-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium">Verified & Certified</p>
-                          <p className="text-sm text-gray-500">Quality standards met</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* ML Prediction */}
-                {selectedBatch.ml_prediction && (
-                  <div>
-                    <h3 className={`text-lg font-bold mb-4 flex items-center gap-2 ${theme === 'dark' ? 'text-slate-100' : 'text-gray-900'}`}>
-                      <AlertTriangle size={20} className="text-orange-600" />
-                      ML Fraud Detection
-                    </h3>
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <p className="text-sm text-blue-800">
-                        Anomaly Score: <span className="font-bold">{selectedBatch.ml_prediction.anomaly_score || 'Normal'}</span>
-                      </p>
-                      <p className="text-xs text-blue-600 mt-2">This batch has been analyzed by our ML fraud detection system</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-4 border-t">
-                  <button className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors">
-                    Download Certificate
-                  </button>
-                  <button className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                    View on Blockchain
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     );
   };
@@ -1563,22 +918,6 @@ const HaritSwarajMRV = () => {
                   <Menu size={24} />
                 </button>
               )}
-              {![
-                'biomass-id', 'harvest', 'transport', 'manufacturing',
-                'technical-ops', 'distribution', 'supply-chain',
-                'my-plots', 'my-batches', 'all-plots', 'all-batches',
-                'audit-submission', 'settings'
-              ].includes(activeModule) && (
-                  <div className="flex flex-col">
-                    <h1 className={`text-lg md:text-2xl font-black uppercase tracking-tighter italic ${theme === 'dark' ? 'text-white' : 'text-emerald-950'}`}>
-                      {activeModule.replace('-', ' ')}
-                    </h1>
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      <p className="text-[10px] font-black text-emerald-600/60 uppercase tracking-widest leading-none">Terminal Session Active</p>
-                    </div>
-                  </div>
-                )}
             </div>
 
             <div className="flex items-center gap-4">
@@ -1719,6 +1058,9 @@ const HaritSwarajMRV = () => {
             {activeModule === 'my-plots' && (
               <MyPlotsView
                 plots={biomassPlots}
+                harvests={harvests}
+                transports={transports}
+                batches={biocharBatches}
                 onEdit={setEditingPlot}
                 onDelete={handleDeletePlot}
                 apiUrl={apiUrl}
@@ -1728,6 +1070,8 @@ const HaritSwarajMRV = () => {
             {activeModule === 'my-batches' && (
               <MyBatchesView
                 batches={biocharBatches}
+                transports={transports}
+                distributions={distributions}
                 onDelete={handleDeleteBatch}
                 theme={theme}
               />
@@ -1735,6 +1079,9 @@ const HaritSwarajMRV = () => {
             {activeModule === 'all-plots' && (
               <MyPlotsView
                 plots={biomassPlots}
+                harvests={harvests}
+                transports={transports}
+                batches={biocharBatches}
                 onEdit={setEditingPlot}
                 onDelete={handleDeletePlot}
                 apiUrl={apiUrl}
@@ -1744,6 +1091,8 @@ const HaritSwarajMRV = () => {
             {activeModule === 'all-batches' && (
               <MyBatchesView
                 batches={biocharBatches}
+                transports={transports}
+                distributions={distributions}
                 onDelete={handleDeleteBatch}
                 theme={theme}
               />

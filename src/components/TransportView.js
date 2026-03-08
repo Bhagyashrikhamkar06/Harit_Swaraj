@@ -18,11 +18,9 @@ const TransportView = ({ fetchWithAuth, transports = [], batches = [], distribut
         unloading_photo: null
     });
 
-    const generateShipmentId = () => `SHP-${Math.floor(1000 + Math.random() * 9000)}`;
-
     useEffect(() => {
-        if (!form.shipment_id) {
-            setForm(prev => ({ ...prev, shipment_id: generateShipmentId() }));
+        if (!form.shipment_id || form.shipment_id.length > 7) {
+            setForm(prev => ({ ...prev, shipment_id: `SHP-${101 + transports.length}` }));
         }
     }, [transports.length]);
 
@@ -66,7 +64,7 @@ const TransportView = ({ fetchWithAuth, transports = [], batches = [], distribut
 
             setMessage('SUCCESS: ✅ Transport record saved and synchronized!');
             setForm({
-                shipment_id: generateShipmentId(),
+                shipment_id: `SHP-${101 + transports.length + 1}`,
                 vehicle_type: 'Truck',
                 vehicle_number: '',
                 mileage: '',

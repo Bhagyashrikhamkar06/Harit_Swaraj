@@ -1,63 +1,15 @@
 import React from 'react';
-import { Trash2, MapPin, AlertTriangle, ExternalLink, Clock } from 'lucide-react';
+import { Trash2, MapPin, AlertTriangle, Eye, ExternalLink, Clock } from 'lucide-react';
 import DataTable from './DataTable';
 
-const StatusBadge = ({ plot }) => (
-    <div className="relative group/tooltip inline-block">
-        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5
-      ${plot.status === 'verified' ? 'bg-green-100 text-green-700'
-                : plot.status === 'suspicious' ? 'bg-orange-100 text-orange-700'
-                    : 'bg-gray-100 text-gray-500'}`}
-        >
-            {plot.status === 'verified' && <div className="w-1.5 h-1.5 rounded-full bg-green-500" />}
-            {plot.status === 'suspicious' && <AlertTriangle size={11} />}
-            {plot.status === 'pending' && <Clock size={11} />}
-            {plot.status}
-        </span>
 
-        {plot.status === 'suspicious' && plot.verification_data?.anomaly_reasons && (
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-72 p-4 bg-gray-900 text-white text-xs rounded-2xl shadow-2xl
-        opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-50 pointer-events-none">
-                <div className="flex items-center gap-2 mb-2 text-orange-400 font-bold border-b border-white/10 pb-2">
-                    <AlertTriangle size={14} />
-                    <span>Suspicious Activity Detected</span>
-                </div>
-                <ul className="space-y-1.5 opacity-90">
-                    {plot.verification_data.anomaly_reasons.map((reason, i) => (
-                        <li key={i} className="flex items-start gap-2">
-                            <span className="mt-1 w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0" />
-                            <span>{reason}</span>
-                        </li>
-                    ))}
-                </ul>
-                <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-gray-900" />
-            </div>
-        )}
-    </div>
-);
+const MyPlotsView = ({ plots, harvests, transports, batches, onEdit, onDelete, apiUrl, theme, variant = 'default' }) => {
+    const safeDate = (val) => {
+        if (!val) return '—';
+        const d = new Date(val);
+        return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-IN');
+    };
 
-const PhotoStack = ({ photos, apiUrl }) => {
-    if (!photos || photos.length === 0) return <span className="text-gray-300 text-xs">—</span>;
-    return (
-        <div className="flex -space-x-2 hover:space-x-1 transition-all">
-            {photos.slice(0, 3).map((photo, i) => (
-                <img
-                    key={i}
-                    src={`${apiUrl}/uploads/${photo.photo_path}`}
-                    alt="plot"
-                    className="w-10 h-10 object-cover rounded-xl border-2 border-white shadow-sm"
-                />
-            ))}
-            {photos.length > 3 && (
-                <div className="w-10 h-10 bg-gray-100 rounded-xl border-2 border-white shadow-sm flex items-center justify-center text-xs font-bold text-gray-500">
-                    +{photos.length - 3}
-                </div>
-            )}
-        </div>
-    );
-};
-
-const MyPlotsView = ({ plots, onEdit, onDelete, apiUrl, theme }) => {
     const columns = [
         {
             key: 'plot_id',
@@ -65,7 +17,7 @@ const MyPlotsView = ({ plots, onEdit, onDelete, apiUrl, theme }) => {
             mobileMain: true,
             render: (val, row) => (
                 <div>
-                    <div className="font-bold text-gray-900">{val}</div>
+                    <div className="font-bold text-emerald-700">{val}</div>
                     {row.kml_path && (
                         <a
                             href={`${apiUrl}${row.kml_path}`}
@@ -79,39 +31,100 @@ const MyPlotsView = ({ plots, onEdit, onDelete, apiUrl, theme }) => {
                 </div>
             ),
         },
+        { key: 'species', label: 'Biomass Species', render: (_, row) => <span className="text-xs font-semibold text-gray-700">{row.species || '—'}</span> },
+        { key: 'expected_biomass', label: 'Expected Biomass quantity', align: 'center', render: v => v ? `${v} t` : '—' },
         {
-            key: 'photos',
-            label: 'Photos',
-            sortable: false,
-            noSearch: true,
-            render: (val, row) => <PhotoStack photos={row.photos} apiUrl={apiUrl} />,
+            key: 'harvesting_done',
+            label: 'Harvesting Done (Yes/No)',
+            align: 'center',
+            render: (_, row) => {
+                const hrvs = harvests?.filter(h => h.plot_id === row.id) || [];
+                return hrvs.length > 0 ? <span className="text-green-600 font-bold">Yes</span> : <span className="text-gray-400">No</span>;
+            }
         },
         {
-            key: 'type',
-            label: 'Type',
-            render: (val, row) => (
-                <div>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 mb-0.5">
-                        {val}
-                    </span>
-                    <div className="text-xs font-semibold text-gray-600">{row.species}</div>
-                </div>
-            ),
+            key: 'biomass_harvested',
+            label: 'Biomass Harvested (Ton)',
+            align: 'center',
+            render: (_, row) => {
+                const hrvs = harvests?.filter(h => h.plot_id === row.id) || [];
+                if (!hrvs.length) return '—';
+                return hrvs.reduce((sum, h) => sum + (h.actual_harvested_ton || 0), 0).toFixed(2);
+            }
         },
-        { key: 'area', label: 'Area (ac)', align: 'center', render: v => v ?? '—' },
-        { key: 'expected_biomass', label: 'Biomass (t)', align: 'center', render: v => v ?? '—' },
         {
-            key: 'status',
-            label: 'Status',
-            render: (_, row) => <StatusBadge plot={row} />,
+            key: 'date_of_harvesting',
+            label: 'Date of Harvesting',
+            align: 'center',
+            render: (_, row) => {
+                const hrvs = harvests?.filter(h => h.plot_id === row.id) || [];
+                return hrvs.length > 0 ? safeDate(hrvs[0].created_at) : '—';
+            }
         },
+        {
+            key: 'transport_done',
+            label: 'Transportation Done (Yes/No)',
+            align: 'center',
+            render: (_, row) => {
+                const hrvIds = (harvests?.filter(h => h.plot_id === row.id) || []).map(h => h.id);
+                const trans = transports?.filter(t => hrvIds.includes(t.harvest_id)) || [];
+                return trans.length > 0 ? <span className="text-green-600 font-bold">Yes</span> : <span className="text-gray-400">No</span>;
+            }
+        },
+        {
+            key: 'date_of_transport',
+            label: 'Date of Transportation',
+            align: 'center',
+            render: (_, row) => {
+                const hrvIds = (harvests?.filter(h => h.plot_id === row.id) || []).map(h => h.id);
+                const trans = transports?.filter(t => hrvIds.includes(t.harvest_id)) || [];
+                return trans.length > 0 ? safeDate(trans[0].date || trans[0].created_at) : '—';
+            }
+        },
+        {
+            key: 'preprocessing_done',
+            label: 'Pre-processing done? (Yes/No)',
+            align: 'center',
+            render: (_, row) => {
+                const bchs = batches?.filter(b => b.species === row.species && b.species !== null) || [];
+                return bchs.length > 0 ? <span className="text-green-600 font-bold">Yes</span> : <span className="text-gray-400">No</span>;
+            }
+        },
+        {
+            key: 'date_of_preprocessing',
+            label: 'Date of Pre-processing',
+            align: 'center',
+            render: (_, row) => {
+                const bchs = batches?.filter(b => b.species === row.species && b.species !== null) || [];
+                return bchs.length > 0 ? safeDate(bchs[0].created_at) : '—';
+            }
+        },
+        {
+            key: 'mfg_done',
+            label: 'Biochar mfg done (Yes/No)',
+            align: 'center',
+            render: (_, row) => {
+                const bchs = batches?.filter(b => b.species === row.species && b.species !== null) || [];
+                return bchs.length > 0 ? <span className="text-green-600 font-bold">Yes</span> : <span className="text-gray-400">No</span>;
+            }
+        },
+        {
+            key: 'date_of_mfg',
+            label: 'Date of Mfg',
+            align: 'center',
+            render: (_, row) => {
+                const bchs = batches?.filter(b => b.species === row.species && b.species !== null) || [];
+                return bchs.length > 0 ? safeDate(bchs[0].created_at) : '—';
+            }
+        }
     ];
 
     const actions = [
         {
-            label: 'Edit plot',
-            icon: <ExternalLink size={15} />,
-            colorClass: 'hover:!text-blue-600 hover:!bg-blue-50',
+            label: 'View',
+            icon: <Eye size={15} />,
+            showLabel: true,
+            colorClass: 'hover:!text-emerald-700 hover:!bg-emerald-50',
             onClick: (row) => onEdit(row),
         },
         {
@@ -122,37 +135,36 @@ const MyPlotsView = ({ plots, onEdit, onDelete, apiUrl, theme }) => {
         },
     ];
 
-    return (
-        <div className="space-y-6 max-w-6xl mx-auto animate-fade-in pb-16">
-            <div className={`rounded-2xl overflow-hidden border shadow-sm ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}>
-                {/* Simple Header */}
-                <div className={`px-6 py-5 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${theme === 'dark' ? 'bg-green-900 border-slate-700' : 'bg-green-700 border-green-800'}`}>
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-white/10">
-                            <MapPin size={20} className="text-white" />
-                        </div>
-                        <div>
-                            <h2 className="text-lg font-semibold text-white">Plot Registry</h2>
-                            <p className="text-sm text-green-200">Manage your registered land parcels</p>
-                        </div>
-                    </div>
-                    <div className="px-4 py-2 rounded-lg text-sm font-medium bg-white/10 text-white">
-                        {plots?.length || 0} plots registered
-                    </div>
-                </div>
+    if (variant === 'minimal') {
+        return (
+            <div className="w-full">
+                <DataTable
+                    accentColor="green"
+                    columns={columns}
+                    data={plots}
+                    actions={actions}
+                    pageSize={15}
+                    emptyMessage="Register your first plot to start carbon sequestration monitoring."
+                    searchPlaceholder="Search by Plot ID, type, or species…"
+                    variant="minimal"
+                />
+            </div>
+        );
+    }
 
+    return (
+        <div className="space-y-6 max-w-7xl mx-auto animate-fade-in pb-16 pt-2">
+            <div className={`rounded-2xl overflow-hidden border shadow-sm ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}>
                 <div className="p-2">
                     <DataTable
-                        title="Registered Land Parcels"
-                        subtitle="Your biomass plots and verification status."
-                        icon={<MapPin size={20} />}
                         accentColor="green"
                         columns={columns}
                         data={plots}
                         actions={actions}
-                        pageSize={8}
+                        pageSize={15}
                         emptyMessage="Register your first plot to start carbon sequestration monitoring."
                         searchPlaceholder="Search by Plot ID, type, or species…"
+                        variant="default"
                     />
                 </div>
             </div>

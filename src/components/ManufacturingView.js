@@ -17,7 +17,7 @@ const ManufacturingView = ({ fetchWithAuth, batches = [], fetchBatches, fetchDas
     });
 
     const generateBatchId = () => {
-        return `BCH-${Math.floor(1000 + Math.random() * 9000)}`;
+        return `BCH-${101 + batches.length}`;
     };
 
     useEffect(() => {
@@ -59,7 +59,7 @@ const ManufacturingView = ({ fetchWithAuth, batches = [], fetchBatches, fetchDas
 
             setMessage(`SUCCESS: ✅ Batch recorded successfully! Output: ${data.biochar_output}kg`);
             setBatchForm({
-                batch_id: generateBatchId(),
+                batch_id: `BCH-${101 + batches.length + 1}`,
                 biomass_input: '',
                 biochar_output: '',
                 kiln_type: 'Batch Retort Kiln',
@@ -85,9 +85,6 @@ const ManufacturingView = ({ fetchWithAuth, batches = [], fetchBatches, fetchDas
                 {/* Simple Green Header */}
                 <div className={`px-6 py-5 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${theme === 'dark' ? 'bg-green-900 border-slate-700' : 'bg-green-700 border-green-800'}`}>
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-white/10">
-                            <Factory size={20} className="text-white" />
-                        </div>
                         <div>
                             <h2 className="text-lg font-semibold text-white">Production Batch</h2>
                             <p className="text-sm text-green-200">Record biochar production batches</p>

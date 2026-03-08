@@ -37,6 +37,7 @@ const DataTable = ({
     pageSize = 8,
     emptyMessage = 'No records found.',
     searchPlaceholder = 'Search records...',
+    variant = 'default',
 }) => {
     const [search, setSearch] = useState('');
     const [sortKey, setSortKey] = useState(null);
@@ -117,62 +118,69 @@ const DataTable = ({
     return (
         <div className="flex flex-col h-full">
             {/* Table Control Header */}
-            <div className="px-6 py-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <div className="flex items-center gap-2.5 mb-1">
-                        {icon && <div className="text-green-600">{icon}</div>}
-                        <h3 className="text-base font-semibold text-slate-800">{title}</h3>
-                    </div>
-                    {subtitle && <p className="text-slate-400 text-sm">{subtitle}</p>}
-                </div>
+            {variant !== 'minimal' && (
+                <div className="px-6 py-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    {(title || subtitle || icon) && (
+                        <div>
+                            <div className="flex items-center gap-2.5 mb-1">
+                                {icon && <div className="text-green-600">{icon}</div>}
+                                <h3 className="text-base font-semibold text-slate-800">{title}</h3>
+                            </div>
+                            {subtitle && <p className="text-slate-400 text-sm">{subtitle}</p>}
+                        </div>
+                    )}
 
-                <div className="flex flex-col sm:flex-row items-center gap-4">
-                    <div className="relative group w-full sm:w-80">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={18} />
-                        <input
-                            type="text"
-                            placeholder={searchPlaceholder}
-                            value={search}
-                            onChange={(e) => handleSearch(e.target.value)}
-                            className={`w-full pl-12 pr-10 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 placeholder:text-slate-300 transition-all outline-none ring-offset-0 ${accent.ring} focus:ring-2 focus:bg-white focus:shadow-xl focus:shadow-emerald-500/5`}
-                        />
-                        {search && (
-                            <button onClick={() => handleSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500">
-                                <X size={14} />
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                        <div className="relative group w-full sm:w-80">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={18} />
+                            <input
+                                type="text"
+                                placeholder={searchPlaceholder}
+                                value={search}
+                                onChange={(e) => handleSearch(e.target.value)}
+                                className={`w-full pl-12 pr-10 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 placeholder:text-slate-300 transition-all outline-none ring-offset-0 ${accent.ring} focus:ring-2 focus:bg-white focus:shadow-xl focus:shadow-emerald-500/5`}
+                            />
+                            {search && (
+                                <button onClick={() => handleSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500">
+                                    <X size={14} />
+                                </button>
+                            )}
+                        </div>
+                        {headerActions && <div className="flex items-center gap-2">{headerActions}</div>}
+                        <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+                            <button
+                                onClick={() => setViewMode('table')}
+                                className={`p-2 rounded-xl transition-all ${viewMode === 'table' ? 'bg-white text-emerald-600 shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}
+                            >
+                                <LayoutList size={18} />
                             </button>
-                        )}
-                    </div>
-                    {headerActions && <div className="flex items-center gap-2">{headerActions}</div>}
-                    <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
-                        <button
-                            onClick={() => setViewMode('table')}
-                            className={`p-2 rounded-xl transition-all ${viewMode === 'table' ? 'bg-white text-emerald-600 shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}
-                        >
-                            <LayoutList size={18} />
-                        </button>
-                        <button
-                            onClick={() => setViewMode('card')}
-                            className={`p-2 rounded-xl transition-all ${viewMode === 'card' ? 'bg-white text-emerald-600 shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}
-                        >
-                            <LayoutGrid size={18} />
-                        </button>
+                            <button
+                                onClick={() => setViewMode('card')}
+                                className={`p-2 rounded-xl transition-all ${viewMode === 'card' ? 'bg-white text-emerald-600 shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}
+                            >
+                                <LayoutGrid size={18} />
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* ── Table View ── */}
             {viewMode === 'table' && (
                 <div className="overflow-x-auto">
-                    <table className="w-full">
+                    <table className={`w-full ${variant === 'minimal' ? 'border-collapse border border-gray-300' : ''}`}>
                         <thead>
-                            <tr className="bg-slate-50/50 border-y border-slate-100">
+                            <tr className={variant === 'minimal' ? 'bg-white border-b border-gray-300' : 'bg-[#f6f8f1]/80 border-y border-[#eaefe2]'}>
                                 {columns.map(col => (
                                     <th
                                         key={col.key}
                                         onClick={() => col.sortable !== false && handleSort(col.key)}
-                                        className={`px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap
+                                        className={variant === 'minimal' ? `px-3 py-2 text-[12px] font-bold text-gray-900 border border-gray-300 whitespace-nowrap bg-gray-50
                       ${col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'}
-                      ${col.sortable !== false ? 'cursor-pointer select-none hover:text-emerald-600 hover:bg-emerald-50/50 transition-all' : ''}
+                      ${col.sortable !== false ? 'cursor-pointer select-none' : ''}
+                    ` : `px-6 py-4 text-[13px] font-bold text-[#6D8B74] whitespace-nowrap
+                      ${col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'}
+                      ${col.sortable !== false ? 'cursor-pointer select-none hover:text-emerald-700 hover:bg-[#eaefe2]/50 transition-all' : ''}
                     `}
                                     >
                                         <span className="inline-flex items-center gap-2">
@@ -182,20 +190,22 @@ const DataTable = ({
                                     </th>
                                 ))}
                                 {actions.length > 0 && (
-                                    <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase tracking-wider text-center">
+                                    <th className={variant === 'minimal' ? "px-3 py-2 text-[12px] font-bold text-gray-900 border border-gray-300 bg-gray-50 text-center" : "px-6 py-4 text-[13px] font-bold text-[#6D8B74] text-center"}>
                                         Actions
                                     </th>
                                 )}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-50">
+                        <tbody className={variant === 'minimal' ? "" : "divide-y divide-slate-50"}>
                             {paged.length > 0 ? (
                                 paged.map((row, rowIdx) => (
-                                    <tr key={row.id ?? rowIdx} className={`transition-all duration-300 group ${accent.row}`}>
+                                    <tr key={row.id ?? rowIdx} className={variant === 'minimal' ? 'bg-white hover:bg-gray-50 outline-none' : `transition-all duration-300 group ${accent.row}`}>
                                         {columns.map(col => (
                                             <td
                                                 key={col.key}
-                                                className={`px-8 py-5 text-sm font-bold text-slate-700
+                                                className={variant === 'minimal' ? `px-3 py-2 text-[12px] font-normal text-gray-800 border-b border-r border-gray-300
+                          ${col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : ''}
+                        ` : `px-6 py-4 text-[13px] font-semibold text-slate-700
                           ${col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : ''}
                         `}
                                             >
@@ -203,7 +213,7 @@ const DataTable = ({
                                             </td>
                                         ))}
                                         {actions.length > 0 && (
-                                            <td className="px-8 py-5 text-center">
+                                            <td className={variant === 'minimal' ? "px-3 py-2 text-center border-b border-gray-300 border-r" : "px-8 py-5 text-center"}>
                                                 <div className="flex justify-center gap-2">
                                                     {actions.map((act, aIdx) => {
                                                         if (act.show && !act.show(row)) return null;
@@ -212,10 +222,14 @@ const DataTable = ({
                                                                 key={aIdx}
                                                                 onClick={() => act.onClick(row)}
                                                                 title={act.label}
-                                                                className={`p-2 rounded-xl transition-all text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 hover:shadow-lg hover:shadow-emerald-500/10 ${act.colorClass || ''}`}
+                                                                className={variant === 'minimal' ? `px-2 py-1 rounded flex items-center justify-center gap-1 hover:bg-gray-200 text-xs font-semibold underline text-blue-600` : `px-3 py-1.5 rounded-lg flex items-center justify-center gap-2 transition-all text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 hover:shadow-sm ${act.colorClass || ''}`}
                                                             >
-                                                                {act.icon}
-                                                                {act.showLabel && <span className="ml-2 text-[10px] font-black uppercase tracking-widest">{act.label}</span>}
+                                                                {variant === 'minimal' ? (act.label) : (
+                                                                    <>
+                                                                        {act.icon}
+                                                                        {act.showLabel && <span className="text-[12px] font-bold">{act.label}</span>}
+                                                                    </>
+                                                                )}
                                                             </button>
                                                         );
                                                     })}

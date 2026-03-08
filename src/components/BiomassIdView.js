@@ -15,13 +15,11 @@ const BiomassIdView = ({
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState('');
 
-    const generatePlotId = () => `PLT-${Math.floor(1000 + Math.random() * 9000)}`;
-
     useEffect(() => {
-        if (!plotForm.plot_id) {
-            setPlotForm(prev => ({ ...prev, plot_id: generatePlotId() }));
+        if (!plotForm.plot_id || plotForm.plot_id.length > 7) {
+            setPlotForm(prev => ({ ...prev, plot_id: `PLT-${101 + plots.length}` }));
         }
-    }, []);
+    }, [plots.length]);
 
     const handlePhotoChange = (index, file) => {
         const newPhotos = [...plotForm.photos];
@@ -71,7 +69,7 @@ const BiomassIdView = ({
 
             setMessage(`SUCCESS: ✅ Plot registered successfully! ID: ${data.plot_id}`);
             setPlotForm({
-                plot_id: generatePlotId(),
+                plot_id: `PLT-${101 + plots.length + 1}`,
                 type: 'Wood',
                 species: '',
                 area: '',

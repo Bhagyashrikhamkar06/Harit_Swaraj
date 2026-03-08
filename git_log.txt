@@ -1,0 +1,10 @@
+﻿94964f1 feat: standardise detailed api error parsing across all form views
+cae5c94 fix: explicit error parsing in distribution application and correct field type
+be6a8e5 fix: transport validation and ID logic
+0845fbb feat: Make API URL configurable for Vercel deployment
+298db0e feat: Add new Supply Chain Workflow for Owner role
+067c7d3 fix: add argon2-cffi and robustify startup user creation
+bb18425 fix: update production API URL in App.js to match Railway deployment
+f97aa75 fix: add email-validator and adjust python path for production
+3b9a90a fix: make startup event resilient to database connection issues
+7dd8a63 fix: stability improvements for cloud deployment (deps, packages, db retries)

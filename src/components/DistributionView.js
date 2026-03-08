@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Package, Trash2, CheckCircle, AlertTriangle, Globe, MapPin } from 'lucide-react';
 import DataTable from './DataTable';
 import MediaUploader from './MediaUploader';
@@ -8,6 +8,7 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
     const [message, setMessage] = useState('');
 
     const [disForm, setDisForm] = useState({
+        dist_id: '',
         batch_id: '',
         customer_id: '',
         planned_use: 'Agriculture',
@@ -15,6 +16,12 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
         quantity_kg: '',
         amount_rs: ''
     });
+
+    useEffect(() => {
+        if (!disForm.dist_id) {
+            setDisForm(prev => ({ ...prev, dist_id: `DST-${101 + (distributions?.length || 0)}` }));
+        }
+    }, [distributions?.length]);
 
     const [appForm, setAppForm] = useState({
         distribution_id: '',
@@ -29,6 +36,7 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
         setMessage('');
         try {
             const formData = new FormData();
+            formData.append('distribution_id', disForm.dist_id);
             formData.append('batch_id', disForm.batch_id);
             formData.append('customer_id', disForm.customer_id);
             formData.append('planned_use', disForm.planned_use);
@@ -43,7 +51,15 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
 
             if (!res.ok) throw new Error('Failed to record distribution');
             setMessage('SUCCESS: ✅ Distribution recorded successfully!');
-            setDisForm({ batch_id: '', customer_id: '', planned_use: 'Agriculture', location: '', quantity_kg: '', amount_rs: '' });
+            setDisForm({
+                dist_id: `DST-${101 + distributions.length + 1}`,
+                batch_id: '',
+                customer_id: '',
+                planned_use: 'Agriculture',
+                location: '',
+                quantity_kg: '',
+                amount_rs: ''
+            });
             if (onSuccess) onSuccess();
         } catch (err) {
             setMessage(`ERROR: ❌ ${err.message}`);
@@ -91,9 +107,14 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
     // --- DataTable columns for distributions ---
     const distColumns = [
         {
+            key: 'distribution_id',
+            label: 'Dist Ref',
+            mobileMain: true,
+            render: (v) => <span className="font-mono text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-lg font-bold">{v}</span>,
+        },
+        {
             key: 'customer_id',
             label: 'Customer ID',
-            mobileMain: true,
             render: (v) => <span className="font-bold text-gray-900">{v}</span>,
         },
         {
@@ -153,8 +174,8 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
                             <Package size={20} className="text-white" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-semibold text-white">Distribution & Application</h2>
-                            <p className="text-sm text-green-200">Certified carbon sink documentation</p>
+                            <h2 className="text-lg font-semibold text-white">Biochar Distribution & Application</h2>
+                            <p className="text-sm text-green-200">Certified carbon sink documentation & field verification</p>
                         </div>
                     </div>
                     <div className="flex gap-2">
@@ -178,9 +199,19 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
                         <form onSubmit={handleDisSubmit} className="space-y-5">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">Select Batch</label>
+                                    <label className="text-sm font-bold text-gray-700">Distribution Reference ID</label>
+                                    <input
+                                        type="text"
+                                        value={disForm.dist_id}
+                                        readOnly
+                                        className="w-full px-5 py-3 bg-green-50/30 border border-green-100 rounded-2xl outline-none font-mono font-bold text-green-700 cursor-not-allowed"
+                                        placeholder="Auto-generated"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-gray-700">Select Production Batch</label>
                                     <select
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 outline-none transition-all appearance-none"
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all appearance-none"
                                         value={disForm.batch_id}
                                         onChange={e => setDisForm({ ...disForm, batch_id: e.target.value })}
                                         required
@@ -197,7 +228,7 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
                                     <label className="text-sm font-bold text-gray-700">Customer ID</label>
                                     <input
                                         type="text"
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 outline-none transition-all"
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all"
                                         value={disForm.customer_id}
                                         onChange={e => setDisForm({ ...disForm, customer_id: e.target.value })}
                                         placeholder="e.g. CUST-001"
@@ -207,7 +238,7 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-gray-700">Planned Use</label>
                                     <select
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 outline-none transition-all appearance-none"
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all appearance-none"
                                         value={disForm.planned_use}
                                         onChange={e => setDisForm({ ...disForm, planned_use: e.target.value })}
                                     >
@@ -221,7 +252,7 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
                                     <label className="text-sm font-bold text-gray-700">Location</label>
                                     <input
                                         type="text"
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 outline-none transition-all"
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all"
                                         value={disForm.location}
                                         onChange={e => setDisForm({ ...disForm, location: e.target.value })}
                                         placeholder="City / Village"
@@ -231,7 +262,7 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
                                     <label className="text-sm font-bold text-gray-700">Quantity (kg)</label>
                                     <input
                                         type="number"
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 outline-none transition-all font-bold"
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all font-bold"
                                         value={disForm.quantity_kg}
                                         onChange={e => setDisForm({ ...disForm, quantity_kg: e.target.value })}
                                         placeholder="0"
@@ -242,7 +273,7 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
                                     <label className="text-sm font-bold text-gray-700">Amount (Rs)</label>
                                     <input
                                         type="number"
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500 outline-none transition-all font-bold"
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all font-bold"
                                         value={disForm.amount_rs}
                                         onChange={e => setDisForm({ ...disForm, amount_rs: e.target.value })}
                                         placeholder="0.00"
@@ -253,7 +284,7 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
                             <button
                                 type="submit"
                                 disabled={submitting}
-                                className="w-full bg-gradient-to-r from-purple-600 to-purple-500 text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 hover:from-purple-700 hover:to-purple-600 transition-all disabled:opacity-60 active:scale-95"
+                                className="w-full bg-gradient-to-r from-green-600 to-green-500 text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 hover:from-green-700 hover:to-green-600 transition-all disabled:opacity-60 active:scale-95"
                             >
                                 {submitting ? (
                                     <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /><span>Saving...</span></>
@@ -278,7 +309,7 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
                                         <option value="">-- Select Distribution --</option>
                                         {distributions && distributions.map(d => (
                                             <option key={d.id} value={d.id}>
-                                                Dist #{d.id} - {d.customer_id}
+                                                {d.distribution_id || `Dist #${d.id}`} - {d.customer_id}
                                             </option>
                                         ))}
                                     </select>
@@ -312,7 +343,7 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
                             <button
                                 type="submit"
                                 disabled={submitting}
-                                className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 hover:from-blue-700 hover:to-blue-600 transition-all disabled:opacity-60 active:scale-95"
+                                className="w-full bg-gradient-to-r from-green-600 to-green-500 text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 hover:from-green-700 hover:to-green-600 transition-all disabled:opacity-60 active:scale-95"
                             >
                                 {submitting ? (
                                     <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /><span>Saving...</span></>
