@@ -647,6 +647,8 @@ const HaritSwarajMRV = () => {
     const [showBatchModal, setShowBatchModal] = useState(false);
     const [fetchError, setFetchError] = useState(null);
     const [showPopulateConfirm, setShowPopulateConfirm] = useState(false);
+    const [showBiomassLayer, setShowBiomassLayer] = useState(true);
+    const [showAppLayer, setShowAppLayer] = useState(true);
 
     // Effect to handle fetch errors from parent or self
     useEffect(() => {
@@ -797,15 +799,13 @@ const HaritSwarajMRV = () => {
           </div>
 
           {/* Map Section */}
-          <div className="relative rounded-lg border border-gray-200 overflow-hidden shadow-sm h-[400px] mb-12">
+          <div className="relative rounded-lg border border-gray-200 overflow-hidden shadow-sm h-[400px] mb-8">
             <div className="w-full h-full z-0">
               <MapContainer center={[18.5204, 73.8567]} zoom={9} scrollWheelZoom={false} attributionControl={false} style={{ height: "100%", width: "100%", zIndex: 0 }}>
                 <TileLayer
                   url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
                 />
-
-                {biomassPlots.map((plot, idx) => {
-                  // Use stable seed-based offset so pins don't jump on re-render
+                {showBiomassLayer && biomassPlots.map((plot, idx) => {
                   const seedLat = ((idx * 37 + 13) % 100 - 50) / 250;
                   const seedLng = ((idx * 53 + 7) % 100 - 50) / 250;
                   const lat = parseFloat(plot.latitude) || (18.5204 + seedLat);
@@ -813,15 +813,24 @@ const HaritSwarajMRV = () => {
                   return (
                     <Marker key={`p-${plot.plot_id || idx}`} position={[lat, lng]} icon={BiomassIcon}>
                       <Popup>
-                        <strong>Biomass Plot: {plot.plot_id}</strong><br />
-                        {plot.type} — {plot.species}<br />
-                        Expected: {plot.expected_biomass} tons
+                        <div style={{ minWidth: 160 }}>
+                          <div style={{ fontWeight: 700, marginBottom: 4, color: '#065f46' }}>{plot.plot_id}</div>
+                          <div style={{ fontSize: 12, color: '#555', marginBottom: 6 }}>
+                            {plot.species} · {plot.type}<br />
+                            Expected: <strong>{plot.expected_biomass} t</strong>
+                          </div>
+                          <button
+                            onClick={() => { setActiveModule('my-plots'); setEditingPlot(plot); }}
+                            style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 700, width: '100%' }}
+                          >
+                            View Plot →
+                          </button>
+                        </div>
                       </Popup>
                     </Marker>
                   );
                 })}
-
-                {distributions?.filter(d => d.applications && d.applications.length > 0).map((d, dIdx) => {
+                {showAppLayer && distributions?.filter(d => d.applications && d.applications.length > 0).map((d, dIdx) => {
                   const sLat = ((dIdx * 41 + 19) % 100 - 50) / 330;
                   const sLng = ((dIdx * 61 + 11) % 100 - 50) / 330;
                   const appLat = parseFloat(d.latitude) || (18.4804 + sLat);
@@ -829,18 +838,42 @@ const HaritSwarajMRV = () => {
                   return (
                     <Marker key={`d-${d.distribution_id || dIdx}`} position={[appLat, appLng]} icon={ApplicationIcon}>
                       <Popup>
-                        <strong>Biochar Application: {d.distribution_id}</strong><br />
-                        Quantity: {d.quantity_kg} kg
+                        <div style={{ minWidth: 160 }}>
+                          <div style={{ fontWeight: 700, marginBottom: 4, color: '#1e40af' }}>{d.distribution_id}</div>
+                          <div style={{ fontSize: 12, color: '#555', marginBottom: 6 }}>
+                            Quantity: <strong>{d.quantity_kg} kg</strong>
+                          </div>
+                          <button
+                            onClick={() => setActiveModule('distribution')}
+                            style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 700, width: '100%' }}
+                          >
+                            View Distribution →
+                          </button>
+                        </div>
                       </Popup>
                     </Marker>
                   );
                 })}
               </MapContainer>
             </div>
-
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-row gap-2 z-[400]">
-              <button className="px-5 py-2.5 bg-white text-gray-900 font-bold text-[13px] shadow-lg cursor-default border border-gray-100 whitespace-nowrap"><span className="inline-block w-3 h-3 rounded-full bg-[#10b981] mr-2"></span>Biomass Locations</button>
-              <button className="px-5 py-2.5 bg-white text-gray-900 font-bold text-[13px] shadow-lg cursor-default border border-gray-100 whitespace-nowrap"><span className="inline-block w-3 h-3 rounded-full bg-[#3b82f6] mr-2"></span>Biochar Applications</button>
+            {/* Layer Toggle Legend Buttons */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-row gap-2 z-[400]">
+              <button
+                onClick={() => setShowBiomassLayer(v => !v)}
+                className={`px-4 py-2 text-[13px] font-bold shadow-lg border transition-all flex items-center gap-2 rounded-lg ${showBiomassLayer ? 'bg-white text-gray-900 border-gray-200' : 'bg-gray-100 text-gray-400 border-gray-200 opacity-60'
+                  }`}
+              >
+                <span className={`inline-block w-3 h-3 rounded-full transition-all ${showBiomassLayer ? 'bg-[#10b981]' : 'bg-gray-300'}`}></span>
+                Biomass Locations
+              </button>
+              <button
+                onClick={() => setShowAppLayer(v => !v)}
+                className={`px-4 py-2 text-[13px] font-bold shadow-lg border transition-all flex items-center gap-2 rounded-lg ${showAppLayer ? 'bg-white text-gray-900 border-gray-200' : 'bg-gray-100 text-gray-400 border-gray-200 opacity-60'
+                  }`}
+              >
+                <span className={`inline-block w-3 h-3 rounded-full transition-all ${showAppLayer ? 'bg-[#3b82f6]' : 'bg-gray-300'}`}></span>
+                Biochar Applications
+              </button>
             </div>
           </div>
 

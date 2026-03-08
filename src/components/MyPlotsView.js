@@ -12,6 +12,37 @@ const MyPlotsView = ({ plots, harvests, transports, batches, onEdit, onDelete, a
 
     const columns = [
         {
+            key: '__progress__',
+            label: 'Progress',
+            sortable: false,
+            align: 'center',
+            render: (_, row) => {
+                const hrvs = harvests?.filter(h => h.plot_id === row.id) || [];
+                const harvDone = hrvs.length > 0;
+                const hrvIds = hrvs.map(h => h.id);
+                const transDone = (transports?.filter(t => hrvIds.includes(t.harvest_id)) || []).length > 0;
+                const bchs = batches?.filter(b => b.species === row.species && b.species !== null) || [];
+                const mfgDone = bchs.length > 0;
+                const steps = [harvDone, transDone, mfgDone, mfgDone];
+                const labels = ['Harvest', 'Transport', 'Pre-proc', 'Mfg'];
+                const done = [harvDone, transDone, mfgDone].filter(Boolean).length;
+                const total = 3;
+                return (
+                    <div className="flex flex-col items-center gap-1 min-w-[80px]">
+                        <div className="flex gap-1 items-center">
+                            {[harvDone, transDone, mfgDone].map((s, i) => (
+                                <div key={i} title={labels[i]}
+                                    className={`h-2 w-5 rounded-full transition-all ${s ? 'bg-emerald-500' : 'bg-gray-200'}`} />
+                            ))}
+                        </div>
+                        <span className={`text-[10px] font-bold ${done === total ? 'text-emerald-600' : 'text-gray-400'}`}>
+                            {done}/{total}
+                        </span>
+                    </div>
+                );
+            }
+        },
+        {
             key: 'plot_id',
             label: 'Plot ID',
             mobileMain: true,

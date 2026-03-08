@@ -54,6 +54,35 @@ const MyBatchesView = ({ batches, transports = [], distributions = [], onDelete,
     };
     const columns = [
         {
+            key: '__progress__',
+            label: 'Progress',
+            sortable: false,
+            align: 'center',
+            render: (_, row) => {
+                const isShipped = transports.some(t => t.type === 'outbound' && distributions.some(d => d.id === t.distribution_id && d.batch_id === row.id));
+                const hasApp = distributions.some(d => d.batch_id === row.id && d.applications && d.applications.length > 0);
+                // Step 1: Manufactured (always true since it's in the batch list)
+                // Step 2: Shipped | Step 3: Applied
+                const steps = [true, isShipped, hasApp];
+                const labels = ['Mfg', 'Shipped', 'Applied'];
+                const done = steps.filter(Boolean).length;
+                const total = 3;
+                return (
+                    <div className="flex flex-col items-center gap-1 min-w-[80px]">
+                        <div className="flex gap-1 items-center">
+                            {steps.map((s, i) => (
+                                <div key={i} title={labels[i]}
+                                    className={`h-2 w-5 rounded-full transition-all ${s ? 'bg-emerald-500' : 'bg-gray-200'}`} />
+                            ))}
+                        </div>
+                        <span className={`text-[10px] font-bold ${done === total ? 'text-emerald-600' : 'text-gray-400'}`}>
+                            {done}/{total}
+                        </span>
+                    </div>
+                );
+            }
+        },
+        {
             key: 'batch_id',
             label: 'Biochar Batch ID',
             mobileMain: true,
