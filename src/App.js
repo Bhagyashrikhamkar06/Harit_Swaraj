@@ -845,10 +845,14 @@ const HaritSwarajMRV = () => {
           </div>
 
           {/* Process Tables Stacked */}
-          <div className="space-y-12 pb-16">
+          <div className="space-y-8 pb-4">
+            {/* Process Status: Biomass */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-0 font-serif">Process Status: Biomass</h3>
-              <div className="-mx-2 pb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-1 h-5 rounded-full bg-emerald-500" />
+                <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Process Status — Biomass</h3>
+              </div>
+              <div className="rounded-xl border border-gray-200 overflow-hidden shadow-sm bg-white">
                 <MyPlotsView
                   plots={biomassPlots}
                   harvests={harvests}
@@ -862,9 +866,14 @@ const HaritSwarajMRV = () => {
                 />
               </div>
             </div>
+
+            {/* Process Status: Biochar */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-0 font-serif -mt-4">Process Status: Biochar</h3>
-              <div className="-mx-2">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-1 h-5 rounded-full bg-emerald-500" />
+                <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Process Status — Biochar</h3>
+              </div>
+              <div className="rounded-xl border border-gray-200 overflow-hidden shadow-sm bg-white">
                 <MyBatchesView
                   batches={biocharBatches}
                   transports={transports}
@@ -875,7 +884,119 @@ const HaritSwarajMRV = () => {
                 />
               </div>
             </div>
+
+            {/* All Data Section */}
+            <AllDataSection
+              biomassPlots={biomassPlots}
+              harvests={harvests}
+              transports={transports}
+              biocharBatches={biocharBatches}
+              theme={theme}
+            />
           </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ---- All Data Accordion Component (inside DashboardView) ----
+  const AllDataSection = ({ biomassPlots, harvests, transports, biocharBatches, theme }) => {
+    const [openSection, setOpenSection] = React.useState(null);
+    const toggle = (key) => setOpenSection(prev => prev === key ? null : key);
+
+    const sectionStyle = "rounded-xl border border-gray-200 overflow-hidden shadow-sm bg-white";
+    const headerStyle = "w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors";
+
+    const chevronIcon = (key) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+        className={`text-gray-400 transition-transform duration-200 ${openSection === key ? 'rotate-180' : ''}`}>
+        <polyline points="6 9 12 15 18 9" />
+      </svg>
+    );
+
+    // Column sets for each table
+    const biomassIdColumns = [
+      { key: 'plot_id', label: 'Plot ID', render: v => <span className="font-semibold text-emerald-700">{v}</span> },
+      { key: 'owner_name', label: 'Owner Name', render: (_, r) => r.owner_name || r.owner || '—' },
+      { key: 'type', label: 'Type' },
+      { key: 'species', label: 'Species' },
+      { key: 'area_hectares', label: 'Area (ha)', align: 'center' },
+      { key: 'expected_biomass', label: 'Expected Biomass (t)', align: 'center' },
+      { key: 'location', label: 'Location', render: (_, r) => r.location || r.district || '—' },
+    ];
+
+    const harvestColumns = [
+      { key: 'id', label: 'Harvest ID', render: v => <span className="font-semibold text-emerald-700">{v}</span> },
+      { key: 'plot_id', label: 'Plot ID' },
+      { key: 'actual_harvested_ton', label: 'Harvested (t)', align: 'center' },
+      { key: 'harvesting_method', label: 'Method', render: v => v || '—' },
+      { key: 'created_at', label: 'Date', render: v => v ? new Date(v).toLocaleDateString('en-IN') : '—' },
+    ];
+
+    const transportColumns = [
+      { key: 'id', label: 'Transport ID', render: v => <span className="font-semibold text-emerald-700">{v}</span> },
+      { key: 'type', label: 'Type', render: v => <span className={`font-bold text-xs uppercase ${v === 'inbound' ? 'text-blue-600' : 'text-orange-600'}`}>{v}</span> },
+      { key: 'quantity_kg', label: 'Quantity (kg)', align: 'center' },
+      { key: 'vehicle_type', label: 'Vehicle', render: v => v || '—' },
+      { key: 'date', label: 'Date', render: (v, r) => v ? new Date(v).toLocaleDateString('en-IN') : (r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN') : '—') },
+    ];
+
+    const preprocessColumns = [
+      { key: 'batch_id', label: 'Batch ID', render: v => <span className="font-semibold text-emerald-700">{v}</span> },
+      { key: 'species', label: 'Species', render: v => v || '—' },
+      { key: 'biomass_input', label: 'Biomass Input (kg)', align: 'center' },
+      { key: 'preprocessing_method', label: 'Method', render: (_, r) => r.preprocessing_method || 'Drying' },
+      { key: 'created_at', label: 'Date', render: v => v ? new Date(v).toLocaleDateString('en-IN') : '—' },
+    ];
+
+    const mfgColumns = [
+      { key: 'batch_id', label: 'Batch ID', render: v => <span className="font-semibold text-emerald-700">{v}</span> },
+      { key: 'biomass_input', label: 'Biomass Used (kg)', align: 'center' },
+      { key: 'species', label: 'Species', render: v => v || '—' },
+      { key: 'biochar_output', label: 'Biochar Output (kg)', align: 'center', render: v => <span className="font-bold text-emerald-700">{v}</span> },
+      { key: 'pyrolysis_temp', label: 'Temp (°C)', align: 'center', render: v => v || '—' },
+      { key: 'created_at', label: 'Mfg Date', render: v => v ? new Date(v).toLocaleDateString('en-IN') : '—' },
+    ];
+
+    const sections = [
+      { key: 'biomass-id', label: 'Biomass Identification', count: biomassPlots.length, columns: biomassIdColumns, data: biomassPlots },
+      { key: 'harvesting', label: 'Biomass Harvesting', count: harvests?.length || 0, columns: harvestColumns, data: harvests || [] },
+      { key: 'transport', label: 'Transportation', count: transports?.length || 0, columns: transportColumns, data: transports || [] },
+      { key: 'preprocessing', label: 'Pre-processing', count: biocharBatches?.length || 0, columns: preprocessColumns, data: biocharBatches || [] },
+      { key: 'manufacturing', label: 'Biomass Manufacturing', count: biocharBatches?.length || 0, columns: mfgColumns, data: biocharBatches || [] },
+    ];
+
+    return (
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-1 h-5 rounded-full bg-gray-400" />
+          <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">All Data</h3>
+        </div>
+        <div className="space-y-2">
+          {sections.map(({ key, label, count, columns, data }) => (
+            <div key={key} className={sectionStyle}>
+              <button className={headerStyle} onClick={() => toggle(key)}>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-semibold text-gray-800">{label}</span>
+                  <span className="text-xs bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-100">{count}</span>
+                </div>
+                {chevronIcon(key)}
+              </button>
+              {openSection === key && (
+                <div className="border-t border-gray-100">
+                  <DataTable
+                    columns={columns}
+                    data={data}
+                    pageSize={8}
+                    accentColor="green"
+                    emptyMessage={`No ${label.toLowerCase()} records found.`}
+                    searchPlaceholder={`Search ${label}...`}
+                    variant="default"
+                  />
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     );
