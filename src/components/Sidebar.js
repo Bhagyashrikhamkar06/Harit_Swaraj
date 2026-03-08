@@ -89,29 +89,43 @@ const Sidebar = ({
                         const Icon = moduleIcons[module] || Home;
                         const isActive = activeModule === module;
 
+                        // Section label headers between groups (shown in mockup)
+                        const sectionHeaders = {
+                            'biomass-id': { label: 'Process Workflow', show: !isCollapsed },
+                            'distribution': { label: 'Process Optimization', show: !isCollapsed },
+                        };
+
                         return (
-                            <button
-                                key={module}
-                                onClick={() => handleModuleClick(module)}
-                                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 font-medium text-sm ${isActive
-                                    ? activeItemBg + ' shadow-md'
-                                    : inactiveItemColor
-                                    } ${isCollapsed ? 'justify-center' : ''}`}
-                                title={isCollapsed ? moduleLabels[module] : ''}
-                            >
-                                <Icon
-                                    size={18}
-                                    className={`flex-shrink-0 ${isActive ? 'text-white' : (theme === 'dark' ? 'text-green-400' : 'text-white/70')}`}
-                                />
-                                {!isCollapsed && (
-                                    <span className={`text-sm font-normal ${isActive ? 'text-white' : ''}`}>
-                                        {moduleLabels[module]}
-                                    </span>
+                            <React.Fragment key={module}>
+                                {sectionHeaders[module] && sectionHeaders[module].show && (
+                                    <div className="pt-3 pb-1 px-1">
+                                        <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">
+                                            {sectionHeaders[module].label}
+                                        </span>
+                                    </div>
                                 )}
-                                {!isCollapsed && isActive && (
-                                    <ChevronRight size={14} className="ml-auto text-white/70" />
-                                )}
-                            </button>
+                                <button
+                                    onClick={() => handleModuleClick(module)}
+                                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 font-medium text-sm ${isActive
+                                        ? activeItemBg + ' shadow-md'
+                                        : inactiveItemColor
+                                        } ${isCollapsed ? 'justify-center' : ''}`}
+                                    title={isCollapsed ? moduleLabels[module] : ''}
+                                >
+                                    <Icon
+                                        size={18}
+                                        className={`flex-shrink-0 ${isActive ? 'text-white' : (theme === 'dark' ? 'text-green-400' : 'text-white/70')}`}
+                                    />
+                                    {!isCollapsed && (
+                                        <span className={`text-sm font-normal ${isActive ? 'text-white' : ''}`}>
+                                            {moduleLabels[module]}
+                                        </span>
+                                    )}
+                                    {!isCollapsed && isActive && (
+                                        <ChevronRight size={14} className="ml-auto text-white/70" />
+                                    )}
+                                </button>
+                            </React.Fragment>
                         );
                     })}
                 </div>

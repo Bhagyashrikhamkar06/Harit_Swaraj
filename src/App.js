@@ -396,10 +396,10 @@ const HaritSwarajMRV = () => {
   };
 
   const modules = {
-    owner: ['dashboard', 'supply-chain', 'biomass-id', 'harvest', 'transport', 'manufacturing', 'technical-ops', 'distribution', 'my-plots', 'my-batches', 'settings'],
+    owner: ['dashboard', 'supply-chain', 'biomass-id', 'harvest', 'transport', 'manufacturing', 'technical-ops', 'distribution', 'customer-id', 'my-plots', 'my-batches', 'settings'],
     farmer: ['dashboard', 'biomass-id', 'harvest', 'my-plots', 'settings'],
     auditor: ['dashboard', 'audit-submission', 'all-plots', 'all-batches', 'settings'],
-    admin: ['dashboard', 'supply-chain', 'biomass-id', 'all-plots', 'harvest', 'transport', 'manufacturing', 'technical-ops', 'distribution', 'all-batches', 'settings']
+    admin: ['dashboard', 'supply-chain', 'biomass-id', 'all-plots', 'harvest', 'transport', 'manufacturing', 'technical-ops', 'distribution', 'customer-id', 'all-batches', 'settings']
   };
 
   const moduleIcons = {
@@ -416,6 +416,7 @@ const HaritSwarajMRV = () => {
     'technical-ops': Settings,
     'audit-submission': ShieldCheck,
     'supply-chain': Activity,
+    'customer-id': Users,
     settings: Settings
   };
 
@@ -430,9 +431,10 @@ const HaritSwarajMRV = () => {
     'all-plots': t('biomass.all_plots'),
     'all-batches': t('manufacturing.all_batches'),
     dashboard: t('dashboard.title'),
-    'technical-ops': 'Biomass pre-processing',
+    'technical-ops': 'Manufacturing Record',
     'audit-submission': 'Independent Audit',
-    'supply-chain': 'Supply Chain Workflow',
+    'supply-chain': 'Process Workflow',
+    'customer-id': 'Customer Identification',
     settings: 'Profile & Settings'
   };
 
@@ -803,28 +805,36 @@ const HaritSwarajMRV = () => {
                 />
 
                 {biomassPlots.map((plot, idx) => {
-                  // Fallback to demo coordinates spread around Pune if exact lat/lng are missing
-                  const lat = plot.latitude || (18.5204 + (Math.random() - 0.5) * 0.4);
-                  const lng = plot.longitude || (73.8567 + (Math.random() - 0.5) * 0.4);
+                  // Use stable seed-based offset so pins don't jump on re-render
+                  const seedLat = ((idx * 37 + 13) % 100 - 50) / 250;
+                  const seedLng = ((idx * 53 + 7) % 100 - 50) / 250;
+                  const lat = parseFloat(plot.latitude) || (18.5204 + seedLat);
+                  const lng = parseFloat(plot.longitude) || (73.8567 + seedLng);
                   return (
-                    <Marker key={`p-${idx}`} position={[lat, lng]} icon={BiomassIcon}>
+                    <Marker key={`p-${plot.plot_id || idx}`} position={[lat, lng]} icon={BiomassIcon}>
                       <Popup>
                         <strong>Biomass Plot: {plot.plot_id}</strong><br />
-                        {plot.type} - {plot.species}<br />
+                        {plot.type} — {plot.species}<br />
                         Expected: {plot.expected_biomass} tons
                       </Popup>
                     </Marker>
                   );
                 })}
 
-                {distributions?.filter(d => d.applications && d.applications.length > 0).map((d, dIdx) => (
-                  <Marker key={`d-${dIdx}`} position={[18.5204 + (Math.random() - 0.5) * 0.3, 73.8567 + (Math.random() - 0.5) * 0.3]} icon={ApplicationIcon}>
-                    <Popup>
-                      <strong>Biochar Application: {d.distribution_id}</strong><br />
-                      Quantity: {d.quantity_kg} kg
-                    </Popup>
-                  </Marker>
-                ))}
+                {distributions?.filter(d => d.applications && d.applications.length > 0).map((d, dIdx) => {
+                  const sLat = ((dIdx * 41 + 19) % 100 - 50) / 330;
+                  const sLng = ((dIdx * 61 + 11) % 100 - 50) / 330;
+                  const appLat = parseFloat(d.latitude) || (18.4804 + sLat);
+                  const appLng = parseFloat(d.longitude) || (73.8267 + sLng);
+                  return (
+                    <Marker key={`d-${d.distribution_id || dIdx}`} position={[appLat, appLng]} icon={ApplicationIcon}>
+                      <Popup>
+                        <strong>Biochar Application: {d.distribution_id}</strong><br />
+                        Quantity: {d.quantity_kg} kg
+                      </Popup>
+                    </Marker>
+                  );
+                })}
               </MapContainer>
             </div>
 
@@ -975,6 +985,22 @@ const HaritSwarajMRV = () => {
             )}
 
             {activeModule === 'dashboard' && <DashboardView />}
+            {activeModule === 'customer-id' && (
+              <div className="space-y-6 max-w-3xl mx-auto pt-10 pb-16 animate-fade-in">
+                <div className="bg-white border border-gray-200 rounded-2xl p-10 shadow-sm flex flex-col items-center gap-4 text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-green-50 flex items-center justify-center text-green-600">
+                    <Users size={30} />
+                  </div>
+                  <h2 className="text-xl font-semibold text-gray-800">Customer Identification</h2>
+                  <p className="text-gray-500 text-sm max-w-md">
+                    This section will allow you to register and manage end-customers who receive and apply biochar. Linking customers to distribution records enables full supply chain traceability.
+                  </p>
+                  <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-emerald-200">
+                    Coming Soon
+                  </span>
+                </div>
+              </div>
+            )}
             {activeModule === 'supply-chain' && (
               <SupplyChainWizard
                 theme={theme}
