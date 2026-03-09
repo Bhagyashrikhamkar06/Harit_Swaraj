@@ -775,126 +775,71 @@ const HaritSwarajMRV = () => {
             </div>
           </div>
 
-          <style>{`
-            .kpi-wrap {
-              background: radial-gradient(ellipse at 0% 0%, rgba(16,185,129,0.12) 0, transparent 60%),
-                          radial-gradient(ellipse at 100% 100%, rgba(5,150,105,0.1) 0, transparent 60%),
-                          #f0fdf4;
-              border-radius: 1.5rem;
-              padding: 1.5rem;
-              margin-bottom: 2rem;
-            }
-            .kpi-card {
-              position: relative;
-              background: rgba(255,255,255,0.9);
-              backdrop-filter: blur(12px);
-              -webkit-backdrop-filter: blur(12px);
-              border-radius: 1rem;
-              border: 1px solid rgba(255,255,255,0.9);
-              border-left: 4px solid #10b981;
-              padding: 1.4rem 1.4rem 0 1.4rem;
-              overflow: hidden;
-              min-height: 170px;
-              display: flex;
-              flex-direction: column;
-              box-shadow: 0 4px 16px -4px rgba(0,0,0,0.1), 0 1px 4px rgba(0,0,0,0.04);
-              transition: transform 0.22s cubic-bezier(.4,0,.2,1), box-shadow 0.22s cubic-bezier(.4,0,.2,1);
-              cursor: default;
-            }
-            .kpi-card:hover {
-              transform: translateY(-4px);
-              box-shadow: 0 16px 36px -8px rgba(16,185,129,0.2), 0 4px 12px rgba(0,0,0,0.08);
-            }
-            .kpi-progress {
-              position: absolute;
-              bottom: 0; left: 0; right: 0;
-              height: 4px;
-              background: linear-gradient(90deg, #10b981, #34d399);
-            }
-          `}</style>
-
-          <div className="kpi-wrap">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                {
-                  label: "Biomass Identified",
-                  sublabel: "Total expected from registered plots",
-                  value: (biomassPlots.reduce((acc, p) => acc + (parseFloat(p.expected_biomass) || 0), 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
-                  icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 0 1 10 10" /><path d="M12 6v6l4 2" /><circle cx="12" cy="12" r="10" opacity=".3" /><path d="m8 14 4-8 4 8" /><path d="M9.5 11h5" /></svg>
-                },
-                {
-                  label: "Biomass Transported",
-                  sublabel: "Inbound transport records",
-                  value: (transports?.filter(t => t.type === 'inbound').reduce((acc, t) => acc + (parseFloat(t.quantity_kg) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
-                  icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="2" /><path d="M16 8h4l3 3v5h-7V8Z" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>
-                },
-                {
-                  label: "Biomass Processed",
-                  sublabel: "Total biomass input to kilns",
-                  value: (biocharBatches?.reduce((acc, b) => acc + (parseFloat(b.biomass_input) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
-                  icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 20h20" /><path d="M5 20V10l7-7 7 7v10" /><path d="M9 20v-5h6v5" /></svg>
-                },
-                {
-                  label: "Biochar Manufactured",
-                  sublabel: "Total biochar produced",
-                  value: (dashboardStats?.total_biochar_produced ? (dashboardStats.total_biochar_produced / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 }) : '0'),
-                  icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 16v-4a4 4 0 0 0-8 0v4" /><path d="M3 16h18" /><path d="M2 20h20" /><path d="M12 8V4" /><path d="M8 8V6" /><path d="M16 8V6" /></svg>
-                },
-                {
-                  label: "Biochar Shipped",
-                  sublabel: "Outbound deliveries completed",
-                  value: (transports?.filter(t => t.type === 'outbound').reduce((acc, t) => acc + (parseFloat(t.quantity_kg) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
-                  icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14" /><path d="m7.5 4.27 9 5.15" /><polyline points="3.29 7 12 12 20.71 7" /><line x1="12" x2="12" y1="22" y2="12" /><circle cx="18.5" cy="15.5" r="2.5" /><path d="M20.27 17.27 22 19" /></svg>
-                },
-                {
-                  label: "Biochar Applied",
-                  sublabel: "Applied to farmland",
-                  value: (distributions?.filter(d => d.applications && d.applications.length > 0).reduce((acc, d) => acc + (parseFloat(d.quantity_kg) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
-                  icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" /></svg>
-                }
-              ].map((kpi, idx) => (
-                <div key={idx} className="kpi-card">
-                  {/* Top row: icon circle + label */}
-                  <div className="flex items-center gap-3 mb-3">
-                    <div style={{
-                      width: 40, height: 40,
-                      borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      flexShrink: 0,
-                      boxShadow: '0 3px 10px -2px rgba(16,185,129,0.5)'
-                    }}>
-                      {kpi.icon}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        {kpi.label}
-                      </div>
-                      <div style={{ fontSize: '10.5px', color: '#9ca3af', marginTop: '1px' }}>
-                        {kpi.sublabel}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Big Number */}
-                  <div style={{
-                    fontSize: '3rem',
-                    fontWeight: 900,
-                    color: '#111827',
-                    lineHeight: 1,
-                    letterSpacing: '-0.04em',
-                    fontFamily: 'Inter, sans-serif',
-                    marginBottom: '1.2rem'
-                  }}>
-                    {kpi.value}
-                    <span style={{ fontSize: '1rem', fontWeight: 600, color: '#6b7280', marginLeft: '6px' }}>t</span>
-                  </div>
-
-                  {/* Green bottom bar */}
-                  <div className="kpi-progress" />
+          {/* KPI Cards Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
+            {[
+              {
+                label: "Biomass Identified",
+                value: (biomassPlots.reduce((acc, p) => acc + (parseFloat(p.expected_biomass) || 0), 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
+                dotColor: "bg-blue-600",
+                icon: <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 0 1 10 10" /><path d="M12 6v6l4 2" /><circle cx="12" cy="12" r="10" opacity=".3" /><path d="m8 14 4-8 4 8" /><path d="M9.5 11h5" /></svg>
+              },
+              {
+                label: "Biomass Transported",
+                value: (transports?.filter(t => t.type === 'inbound').reduce((acc, t) => acc + (parseFloat(t.quantity_kg) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
+                dotColor: "bg-orange-500",
+                icon: <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="2" /><path d="M16 8h4l3 3v5h-7V8Z" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>
+              },
+              {
+                label: "Biomass Processed",
+                value: (biocharBatches?.reduce((acc, b) => acc + (parseFloat(b.biomass_input) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
+                dotColor: "bg-amber-400",
+                icon: <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 20h20" /><path d="M5 20V10l7-7 7 7v10" /><path d="M9 20v-5h6v5" /></svg>
+              },
+              {
+                label: "Biochar Manufactured",
+                value: (dashboardStats?.total_biochar_produced ? (dashboardStats.total_biochar_produced / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 }) : '0'),
+                dotColor: "bg-emerald-500",
+                icon: <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 16v-4a4 4 0 0 0-8 0v4" /><path d="M3 16h18" /><path d="M2 20h20" /><path d="M12 8V4" /><path d="M8 8V6" /><path d="M16 8V6" /></svg>
+              },
+              {
+                label: "Biochar Shipped",
+                value: (transports?.filter(t => t.type === 'outbound').reduce((acc, t) => acc + (parseFloat(t.quantity_kg) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
+                dotColor: "bg-indigo-500",
+                icon: <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14" /><path d="m7.5 4.27 9 5.15" /><polyline points="3.29 7 12 12 20.71 7" /><line x1="12" x2="12" y1="22" y2="12" /><circle cx="18.5" cy="15.5" r="2.5" /><path d="M20.27 17.27 22 19" /></svg>
+              },
+              {
+                label: "Biochar Applied",
+                value: (distributions?.filter(d => d.applications && d.applications.length > 0).reduce((acc, d) => acc + (parseFloat(d.quantity_kg) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
+                dotColor: "bg-rose-500",
+                icon: <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" /></svg>
+              }
+            ].map((kpi, idx) => (
+              <div
+                key={idx}
+                className="bg-white rounded-[20px] p-[22px] flex items-center shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden"
+              >
+                {/* Icon Wrapper */}
+                <div className="w-[54px] h-[54px] rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 mr-4 text-slate-500 shadow-sm">
+                  {kpi.icon}
                 </div>
-              ))}
-            </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[13px] font-semibold text-slate-500 tracking-wide truncate pr-2">
+                      {kpi.label}
+                    </span>
+                    <div className={`w-2 h-2 rounded-full ${kpi.dotColor} shrink-0`} />
+                  </div>
+
+                  <div className="text-[26px] font-bold text-slate-800 tracking-tight leading-none flex items-baseline mt-1.5">
+                    {kpi.value}
+                    <span className="text-[12px] font-semibold text-slate-400 ml-1.5 uppercase tracking-wider">Tons</span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
 
 
