@@ -758,45 +758,145 @@ const HaritSwarajMRV = () => {
 
         {/* Dashboard Content */}
         <div>
-          <h2 className="text-[26px] font-bold text-slate-800 mb-6 font-serif tracking-tight">Dashboard</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {[
-              {
-                label: "Tons of Biomass Identified",
-                value: (biomassPlots.reduce((acc, p) => acc + (parseFloat(p.expected_biomass) || 0), 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
-                icon: <div className="text-green-700 bg-white p-2 rounded shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 14-4-4h2.5L8 5h8l-2.5 5H16z" /><path d="M12 14v6" /></svg></div>
-              },
-              {
-                label: "Tons of Biomass Transported",
-                value: (transports?.filter(t => t.type === 'inbound').reduce((acc, t) => acc + (parseFloat(t.quantity_kg) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
-              },
-              {
-                label: "Tons of Biomass Processed",
-                value: (biocharBatches?.reduce((acc, b) => acc + (parseFloat(b.biomass_input) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
-              },
-              {
-                label: "Tons of Biochar Manufactured",
-                value: (dashboardStats?.total_biochar_produced ? (dashboardStats.total_biochar_produced / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 }) : '0'),
-              },
-              {
-                label: "Tons of Biochar Shipped",
-                value: (transports?.filter(t => t.type === 'outbound').reduce((acc, t) => acc + (parseFloat(t.quantity_kg) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
-              },
-              {
-                label: "Tons of Biochar Applied",
-                value: (distributions?.filter(d => d.applications && d.applications.length > 0).reduce((acc, d) => acc + (parseFloat(d.quantity_kg) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
-              }
-            ].map((kpi, idx) => (
-              <div key={idx} className="bg-[#e6d5b8] rounded-lg p-6 shadow-sm border border-[#d8c3a0] relative overflow-hidden flex flex-col justify-between" style={{ minHeight: '130px' }}>
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-[15px] font-serif text-gray-800 leading-tight w-2/3">{kpi.label}</h3>
-                  {kpi.icon && kpi.icon}
-                </div>
-                <span className="text-3xl font-serif tracking-tight text-gray-900">{kpi.value}</span>
-              </div>
-            ))}
+          {/* Premium Dashboard Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-3">
+                <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg shadow-emerald-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
+                </span>
+                Dashboard
+              </h2>
+              <p className="text-slate-500 text-sm mt-1 font-medium">Real-time biochar supply chain overview</p>
+            </div>
+            <div className="hidden md:flex items-center gap-2 bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold px-4 py-2 rounded-2xl">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block"></span>
+              Live Data
+            </div>
           </div>
+
+          <style>{`
+            .kpi-wrap {
+              background: radial-gradient(ellipse at 0% 0%, rgba(16,185,129,0.12) 0, transparent 60%),
+                          radial-gradient(ellipse at 100% 100%, rgba(5,150,105,0.1) 0, transparent 60%),
+                          #f0fdf4;
+              border-radius: 1.5rem;
+              padding: 1.5rem;
+              margin-bottom: 2rem;
+            }
+            .kpi-card {
+              position: relative;
+              background: rgba(255,255,255,0.9);
+              backdrop-filter: blur(12px);
+              -webkit-backdrop-filter: blur(12px);
+              border-radius: 1rem;
+              border: 1px solid rgba(255,255,255,0.9);
+              border-left: 4px solid #10b981;
+              padding: 1.4rem 1.4rem 0 1.4rem;
+              overflow: hidden;
+              min-height: 170px;
+              display: flex;
+              flex-direction: column;
+              box-shadow: 0 4px 16px -4px rgba(0,0,0,0.1), 0 1px 4px rgba(0,0,0,0.04);
+              transition: transform 0.22s cubic-bezier(.4,0,.2,1), box-shadow 0.22s cubic-bezier(.4,0,.2,1);
+              cursor: default;
+            }
+            .kpi-card:hover {
+              transform: translateY(-4px);
+              box-shadow: 0 16px 36px -8px rgba(16,185,129,0.2), 0 4px 12px rgba(0,0,0,0.08);
+            }
+            .kpi-progress {
+              position: absolute;
+              bottom: 0; left: 0; right: 0;
+              height: 4px;
+              background: linear-gradient(90deg, #10b981, #34d399);
+            }
+          `}</style>
+
+          <div className="kpi-wrap">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                {
+                  label: "Biomass Identified",
+                  sublabel: "Total expected from registered plots",
+                  value: (biomassPlots.reduce((acc, p) => acc + (parseFloat(p.expected_biomass) || 0), 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
+                  icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 0 1 10 10" /><path d="M12 6v6l4 2" /><circle cx="12" cy="12" r="10" opacity=".3" /><path d="m8 14 4-8 4 8" /><path d="M9.5 11h5" /></svg>
+                },
+                {
+                  label: "Biomass Transported",
+                  sublabel: "Inbound transport records",
+                  value: (transports?.filter(t => t.type === 'inbound').reduce((acc, t) => acc + (parseFloat(t.quantity_kg) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
+                  icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="2" /><path d="M16 8h4l3 3v5h-7V8Z" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>
+                },
+                {
+                  label: "Biomass Processed",
+                  sublabel: "Total biomass input to kilns",
+                  value: (biocharBatches?.reduce((acc, b) => acc + (parseFloat(b.biomass_input) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
+                  icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 20h20" /><path d="M5 20V10l7-7 7 7v10" /><path d="M9 20v-5h6v5" /></svg>
+                },
+                {
+                  label: "Biochar Manufactured",
+                  sublabel: "Total biochar produced",
+                  value: (dashboardStats?.total_biochar_produced ? (dashboardStats.total_biochar_produced / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 }) : '0'),
+                  icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 16v-4a4 4 0 0 0-8 0v4" /><path d="M3 16h18" /><path d="M2 20h20" /><path d="M12 8V4" /><path d="M8 8V6" /><path d="M16 8V6" /></svg>
+                },
+                {
+                  label: "Biochar Shipped",
+                  sublabel: "Outbound deliveries completed",
+                  value: (transports?.filter(t => t.type === 'outbound').reduce((acc, t) => acc + (parseFloat(t.quantity_kg) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
+                  icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14" /><path d="m7.5 4.27 9 5.15" /><polyline points="3.29 7 12 12 20.71 7" /><line x1="12" x2="12" y1="22" y2="12" /><circle cx="18.5" cy="15.5" r="2.5" /><path d="M20.27 17.27 22 19" /></svg>
+                },
+                {
+                  label: "Biochar Applied",
+                  sublabel: "Applied to farmland",
+                  value: (distributions?.filter(d => d.applications && d.applications.length > 0).reduce((acc, d) => acc + (parseFloat(d.quantity_kg) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
+                  icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" /></svg>
+                }
+              ].map((kpi, idx) => (
+                <div key={idx} className="kpi-card">
+                  {/* Top row: icon circle + label */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <div style={{
+                      width: 40, height: 40,
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                      boxShadow: '0 3px 10px -2px rgba(16,185,129,0.5)'
+                    }}>
+                      {kpi.icon}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        {kpi.label}
+                      </div>
+                      <div style={{ fontSize: '10.5px', color: '#9ca3af', marginTop: '1px' }}>
+                        {kpi.sublabel}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Big Number */}
+                  <div style={{
+                    fontSize: '3rem',
+                    fontWeight: 900,
+                    color: '#111827',
+                    lineHeight: 1,
+                    letterSpacing: '-0.04em',
+                    fontFamily: 'Inter, sans-serif',
+                    marginBottom: '1.2rem'
+                  }}>
+                    {kpi.value}
+                    <span style={{ fontSize: '1rem', fontWeight: 600, color: '#6b7280', marginLeft: '6px' }}>t</span>
+                  </div>
+
+                  {/* Green bottom bar */}
+                  <div className="kpi-progress" />
+                </div>
+              ))}
+            </div>
+          </div>
+
 
           {/* Map Section */}
           <div className="relative rounded-lg border border-gray-200 overflow-hidden shadow-sm h-[400px] mb-8">
