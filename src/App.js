@@ -15,7 +15,7 @@ import DataTable from './components/DataTable';
 import TechnicalOperationsView from './components/TechnicalOperationsView';
 import AuditSubmissionView from './components/AuditSubmissionView';
 import SupplyChainWizard from './components/SupplyChainWizard';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polygon } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -46,6 +46,8 @@ const HaritSwarajMRV = () => {
 
   const [apiUrl, setApiUrl] = useState(process.env.REACT_APP_API_URL || '');
   const [showServerSettings] = useState(false);
+  const [dashboardSelectedPlot, setDashboardSelectedPlot] = useState(null);
+  const [dashboardPlotTab, setDashboardPlotTab] = useState('Farmer Details');
 
   // PWA state
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -845,82 +847,286 @@ const HaritSwarajMRV = () => {
           </div>
 
 
-          {/* Map Section */}
-          <div className="relative rounded-lg border border-gray-200 overflow-hidden shadow-sm h-[400px] mb-8">
-            <div className="w-full h-full z-0">
-              <MapContainer center={[18.5204, 73.8567]} zoom={9} scrollWheelZoom={false} attributionControl={false} style={{ height: "100%", width: "100%", zIndex: 0 }}>
-                <TileLayer
-                  url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                />
-                {showBiomassLayer && biomassPlots.map((plot, idx) => {
-                  const seedLat = ((idx * 37 + 13) % 100 - 50) / 250;
-                  const seedLng = ((idx * 53 + 7) % 100 - 50) / 250;
-                  const lat = parseFloat(plot.latitude) || (18.5204 + seedLat);
-                  const lng = parseFloat(plot.longitude) || (73.8567 + seedLng);
-                  return (
-                    <Marker key={`p-${plot.plot_id || idx}`} position={[lat, lng]} icon={BiomassIcon}>
-                      <Popup>
-                        <div style={{ minWidth: 160 }}>
-                          <div style={{ fontWeight: 700, marginBottom: 4, color: '#065f46' }}>{plot.plot_id}</div>
-                          <div style={{ fontSize: 12, color: '#555', marginBottom: 6 }}>
-                            {plot.species} · {plot.type}<br />
-                            Expected: <strong>{plot.expected_biomass} t</strong>
-                          </div>
-                          <button
-                            onClick={() => { setActiveModule('my-plots'); setEditingPlot(plot); }}
-                            style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 700, width: '100%' }}
-                          >
-                            View Plot →
-                          </button>
-                        </div>
-                      </Popup>
-                    </Marker>
-                  );
-                })}
-                {showAppLayer && distributions?.filter(d => d.applications && d.applications.length > 0).map((d, dIdx) => {
-                  const sLat = ((dIdx * 41 + 19) % 100 - 50) / 330;
-                  const sLng = ((dIdx * 61 + 11) % 100 - 50) / 330;
-                  const appLat = parseFloat(d.latitude) || (18.4804 + sLat);
-                  const appLng = parseFloat(d.longitude) || (73.8267 + sLng);
-                  return (
-                    <Marker key={`d-${d.distribution_id || dIdx}`} position={[appLat, appLng]} icon={ApplicationIcon}>
-                      <Popup>
-                        <div style={{ minWidth: 160 }}>
-                          <div style={{ fontWeight: 700, marginBottom: 4, color: '#1e40af' }}>{d.distribution_id}</div>
-                          <div style={{ fontSize: 12, color: '#555', marginBottom: 6 }}>
-                            Quantity: <strong>{d.quantity_kg} kg</strong>
-                          </div>
-                          <button
-                            onClick={() => setActiveModule('distribution')}
-                            style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 700, width: '100%' }}
-                          >
-                            View Distribution →
-                          </button>
-                        </div>
-                      </Popup>
-                    </Marker>
-                  );
-                })}
-              </MapContainer>
+          {/* Plot Performance Container (Reference UI Match) */}
+          <div className="bg-[#0b2921] rounded-xl overflow-hidden shadow-lg mb-8 border border-[#164235]">
+            {/* Header */}
+            <div className="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between border-b border-[#164235] gap-2">
+              <div>
+                <h3 className="text-white text-lg font-bold tracking-wide">Plot performance</h3>
+                <p className="text-[#a0b0a8] text-xs mt-1">
+                  All information provided here is verified and authentic*
+                  <span className="text-[#eab308] ml-1 cursor-pointer hover:underline">Check Sources</span> for more information.
+                </p>
+              </div>
             </div>
-            {/* Layer Toggle Legend Buttons */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-row gap-2 z-[400]">
-              <button
-                onClick={() => setShowBiomassLayer(v => !v)}
-                className={`px-4 py-2 text-[13px] font-bold shadow-lg border transition-all flex items-center gap-2 rounded-lg ${showBiomassLayer ? 'bg-white text-gray-900 border-gray-200' : 'bg-gray-100 text-gray-400 border-gray-200 opacity-60'
-                  }`}
-              >
-                <span className={`inline-block w-3 h-3 rounded-full transition-all ${showBiomassLayer ? 'bg-[#10b981]' : 'bg-gray-300'}`}></span>
-                Biomass Locations
-              </button>
-              <button
-                onClick={() => setShowAppLayer(v => !v)}
-                className={`px-4 py-2 text-[13px] font-bold shadow-lg border transition-all flex items-center gap-2 rounded-lg ${showAppLayer ? 'bg-white text-gray-900 border-gray-200' : 'bg-gray-100 text-gray-400 border-gray-200 opacity-60'
-                  }`}
-              >
-                <span className={`inline-block w-3 h-3 rounded-full transition-all ${showAppLayer ? 'bg-[#3b82f6]' : 'bg-gray-300'}`}></span>
-                Biochar Applications
-              </button>
+
+            <div className="flex flex-col md:flex-row h-[500px]">
+              {/* Left Panel: Plot List or Details */}
+              <div className="w-full md:w-1/3 bg-[#0d3429] p-4 overflow-y-auto border-r border-[#164235] custom-scrollbar relative">
+                {!dashboardSelectedPlot ? (
+                  <>
+                    <div className="mb-4 relative">
+                      <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                        <svg className="w-4 h-4 text-[#759588]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                      </div>
+                      <input type="text" placeholder="Search plots here" className="w-full bg-[#0b2921] border border-[#1d4d3f] text-white text-sm rounded-lg focus:ring-[#10b981] focus:border-[#10b981] block pl-10 p-2.5 placeholder-[#759588]" />
+                      <div className="absolute inset-y-0 right-3 flex items-center gap-3">
+                        <svg className="w-4 h-4 text-[#759588] cursor-pointer hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                        <svg className="w-4 h-4 text-[#759588] cursor-pointer hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 pb-2">
+                      {biomassPlots.map((plot, i) => {
+                        const sizeHa = (parseFloat(plot.expected_biomass) / 10).toFixed(1);
+                        const isFaved = i % 3 === 0;
+                        const randomImgId = 1579737482596 + (i * 100);
+                        return (
+                          <div
+                            key={plot.plot_id}
+                            className="bg-[#124234] border border-[#1d4d3f] rounded-lg overflow-hidden cursor-pointer hover:border-[#10b981] transition-all relative group"
+                            onClick={() => setDashboardSelectedPlot(plot)}
+                          >
+                            <div className="h-[84px] relative overflow-hidden bg-slate-800">
+                              <img
+                                src={`https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=200&h=150&fit=crop&q=80&sig=${randomImgId}`}
+                                alt={plot.species}
+                                className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-500"
+                              />
+                              <div className="absolute top-1.5 right-1.5 bg-[#0b2921]/60 p-1 rounded-full backdrop-blur-sm">
+                                <svg className={`w-3.5 h-3.5 ${isFaved ? 'text-red-500 fill-current' : 'text-white'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                </svg>
+                              </div>
+                            </div>
+                            <div className="p-2.5">
+                              <div className="text-white text-[11px] font-bold truncate mb-0.5">{plot.plot_id} Afforestation</div>
+                              <div className="text-[#a0b0a8] text-[9.5px] truncate line-clamp-1 opacity-80">{plot.location_name || 'Farmer: Local SHG'}, {plot.species}</div>
+                              <div className="text-[#fff] bg-[#0b2921] px-1.5 py-0.5 rounded text-[9.5px] mt-1.5 font-semibold inline-flex items-center gap-1 border border-[#164235]">
+                                <svg className="w-2.5 h-2.5 text-[#10b981]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V10z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 21V9h6v12"></path></svg>
+                                {sizeHa} (ha)
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : (
+                  <div className="animate-fade-in text-white h-full flex flex-col">
+                    <div className="flex items-center gap-3 mb-4 cursor-pointer text-[#a0b0a8] hover:text-white transition-colors" onClick={() => setDashboardSelectedPlot(null)}>
+                      <div className="bg-[#10b981]/20 p-1.5 rounded-md border border-[#10b981]/30 text-[#10b981]">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                      </div>
+                      <span className="text-sm font-bold truncate flex-1">{dashboardSelectedPlot.plot_id} Afforestatio...</span>
+                      <span className="text-[10px] text-[#22c55e] font-semibold flex items-center gap-1 shrink-0"><span className="w-1.5 h-1.5 bg-[#22c55e] rounded-full"></span> Farmer Niraj Shinde</span>
+                      <span className="text-[10px] bg-[#164235] px-1.5 py-0.5 rounded ml-1 shrink-0">{(parseFloat(dashboardSelectedPlot.expected_biomass) / 10).toFixed(1)} (ha)</span>
+                    </div>
+
+                    <div className="flex bg-[#0b2921] rounded-lg p-1 mb-4 border border-[#164235] text-[10px] font-semibold text-center overflow-x-auto whitespace-nowrap custom-scrollbar shrink-0">
+                      {['Overview', 'Scientific Data', 'Impact', 'Farmer Details'].map(tab => (
+                        <button
+                          key={tab}
+                          onClick={() => setDashboardPlotTab(tab)}
+                          className={`flex-1 min-w-[80px] px-2 py-1.5 rounded-md transition-all ${dashboardPlotTab === tab ? 'bg-[#10b981] text-[#0b2921] font-bold shadow-sm' : 'text-[#a0b0a8] hover:bg-[#0d3429] hover:text-white'}`}
+                        >
+                          {tab}
+                        </button>
+                      ))}
+                    </div>
+
+                    {dashboardPlotTab === 'Farmer Details' && (
+                      <div className="bg-[#09221a] p-5 rounded-xl border border-[#164235] flex-1 overflow-y-auto custom-scrollbar">
+                        <div className="grid grid-cols-2 gap-y-6 gap-x-4">
+                          <div>
+                            <div className="text-white text-base font-bold mb-0.5">28</div>
+                            <div className="text-[#a0b0a8] text-[9px] tracking-widest uppercase font-semibold">AGE</div>
+                          </div>
+                          <div>
+                            <div className="text-white text-base font-bold mb-0.5">Male</div>
+                            <div className="text-[#a0b0a8] text-[9px] tracking-widest uppercase font-semibold">GENDER</div>
+                          </div>
+
+                          <div>
+                            <div className="text-white text-[13px] font-bold mb-0.5 tracking-wide">(91) 12345-12345</div>
+                            <div className="text-[#a0b0a8] text-[9px] tracking-widest uppercase font-semibold">CONTACT NUMBER</div>
+                          </div>
+                          <div>
+                            <div className="text-white text-[13px] font-bold mb-0.5 tracking-wide">**** **** **** 9875</div>
+                            <div className="text-[#a0b0a8] text-[9px] tracking-widest uppercase font-semibold">AADHAR NUMBER</div>
+                          </div>
+
+                          <div>
+                            <div className="text-white text-[13px] font-bold mb-0.5 tracking-wide">1234567891****</div>
+                            <div className="text-[#a0b0a8] text-[9px] tracking-widest uppercase font-semibold">BANK ACCOUNT NUMBER</div>
+                          </div>
+                          <div>
+                            <div className="text-white text-[13px] font-bold mb-0.5 tracking-wide">SBIN0000537</div>
+                            <div className="text-[#a0b0a8] text-[9px] tracking-widest uppercase font-semibold">IFSC CODE</div>
+                          </div>
+
+                          <div>
+                            <div className="text-white text-[13px] font-bold mb-0.5">10</div>
+                            <div className="text-[#a0b0a8] text-[9px] tracking-widest uppercase font-semibold flex items-center gap-1">TOTAL AREA OWNED <span className="normal-case opacity-70">(ha)</span></div>
+                          </div>
+                          <div>
+                            <div className="text-white text-[13px] font-bold mb-0.5">3.75</div>
+                            <div className="text-[#a0b0a8] text-[9px] tracking-widest uppercase font-semibold">TOTAL AREA UNDER FORESTATION</div>
+                          </div>
+
+                          <div>
+                            <div className="inline-block border border-[#759588] px-2.5 py-0.5 rounded-full text-white text-[10px] font-bold mb-0.5">FARMING</div>
+                            <div className="text-[#a0b0a8] text-[9px] tracking-widest uppercase font-semibold mt-1">MAIN OCCUPATION</div>
+                          </div>
+                          <div>
+                            <div className="inline-block border border-[#759588] px-2.5 py-0.5 rounded-full text-white text-[10px] font-bold mb-0.5">PRIVATE</div>
+                            <div className="text-[#a0b0a8] text-[9px] tracking-widest uppercase font-semibold mt-1">LAND OWNERSHIP</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {dashboardPlotTab === 'Scientific Data' && (
+                      <div className="bg-[#09221a] p-5 rounded-xl border border-[#164235] flex-1 flex flex-col items-center">
+                        <div className="text-white font-semibold text-sm self-start mb-6 flex items-center gap-2">
+                          Soil data
+                          <svg className="w-3.5 h-3.5 text-[#a0b0a8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
+                        {/* Fake Gauge Chart */}
+                        <div className="relative w-48 h-24 overflow-hidden mb-2">
+                          <div className="absolute top-0 left-0 w-48 h-48 rounded-full border-[12px] border-[#0d3429] border-t-red-500 border-r-[#f59e0b] border-b-[#10b981] border-l-[#0d3429] transform -rotate-[45deg]"></div>
+                          <div className="absolute bottom-[-10px] left-1/2 w-1.5 h-20 bg-white shadow-md transform origin-bottom -translate-x-1/2 rotate-[35deg] rounded-full border-b-[20px] border-b-[#0b2921]"></div>
+                          <div className="absolute bottom-[-3px] left-1/2 w-3 h-3 bg-[#a0b0a8] border-2 border-[#10b981] rounded-full transform -translate-x-1/2"></div>
+                        </div>
+                        <div className="text-[#10b981] font-bold text-lg">Excellent</div>
+                        <div className="text-[#a0b0a8] text-xs mb-6">Soil health</div>
+
+                        <div className="w-full text-xs font-semibold">
+                          <div className="grid grid-cols-4 gap-2 text-[#a0b0a8] border-b border-[#164235] pb-2 mb-2 px-2 uppercase text-[9px] tracking-wider">
+                            <span className="col-span-1">Parameter</span>
+                            <span className="col-span-1 text-right">Value</span>
+                            <span className="col-span-1 pl-2 border-l border-[#164235]">Parameter</span>
+                            <span className="col-span-1 text-right">Value</span>
+                          </div>
+                          <div className="grid grid-cols-4 gap-2 text-white px-2 mb-2">
+                            <span className="col-span-1 text-[#759588] text-[10px]">Mn <span className="font-normal">(mg/kg)</span></span>
+                            <span className="col-span-1 text-right">2.5</span>
+                            <span className="col-span-1 pl-2 border-l border-[#164235] text-[#759588] text-[10px]">Zn <span className="font-normal">(mg/kg)</span></span>
+                            <span className="col-span-1 text-right">1.2</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {(dashboardPlotTab === 'Overview' || dashboardPlotTab === 'Impact') && (
+                      <div className="bg-[#09221a] p-5 rounded-xl border border-[#164235] flex-1 flex flex-col items-center justify-center text-[#759588] text-sm text-center">
+                        <svg className="w-8 h-8 opacity-50 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                        Detailed data for {dashboardPlotTab} will be available in the next sync.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Right Panel: Satellite Map */}
+              <div className="w-full md:w-2/3 h-full relative z-0 bg-slate-900 border-l border-[#164235]">
+                <MapContainer center={[18.5204, 73.8567]} zoom={9} scrollWheelZoom={false} attributionControl={false} style={{ height: "100%", width: "100%", zIndex: 0 }}>
+                  <TileLayer
+                    url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                  />
+                  {showBiomassLayer && biomassPlots.map((plot, idx) => {
+                    const seedLat = ((idx * 37 + 13) % 100 - 50) / 250;
+                    const seedLng = ((idx * 53 + 7) % 100 - 50) / 250;
+                    const lat = parseFloat(plot.latitude) || (18.5204 + seedLat);
+                    const lng = parseFloat(plot.longitude) || (73.8567 + seedLng);
+
+                    // Generate a fake irregular polygon around coordinates to make it look like a real farm plot
+                    const sizeH = 0.007 + (idx % 3) * 0.002;
+                    const sizeV = 0.005 + (idx % 2) * 0.003;
+                    const polygonCoords = [
+                      [lat - sizeV, lng - sizeH],
+                      [lat - sizeV * 0.8, lng + sizeH * 1.2],
+                      [lat + sizeV * 1.1, lng + sizeH * 0.9],
+                      [lat + sizeV, lng - sizeH * 0.7],
+                      [lat, lng - sizeH * 1.1]
+                    ];
+
+                    return (
+                      <Polygon
+                        key={`poly-${plot.plot_id || idx}`}
+                        positions={polygonCoords}
+                        pathOptions={{ color: '#f97316', weight: 2.5, fillColor: '#f97316', fillOpacity: 0.15 }}
+                      >
+                        <Popup>
+                          <div style={{ minWidth: 160 }}>
+                            <div style={{ fontWeight: 800, marginBottom: 4, color: '#065f46', fontSize: 13 }}>{plot.plot_id}</div>
+                            <div style={{ fontSize: 12, color: '#555', marginBottom: 8, lineHeight: 1.4 }}>
+                              <strong>Species:</strong> {plot.species}<br />
+                              <strong>Type:</strong> {plot.type}<br />
+                              <strong>Area:</strong> {((parseFloat(plot.expected_biomass) / 10).toFixed(1))} ha<br />
+                              <strong>Est. Biomass:</strong> {plot.expected_biomass} t
+                            </div>
+                            <button
+                              onClick={() => { setDashboardSelectedPlot(plot); }}
+                              style={{ background: '#10b981', color: '#0b2921', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 800, width: '100%', boxShadow: '0 2px 4px rgba(16,185,129,0.3)' }}
+                            >
+                              Open Details ←
+                            </button>
+                          </div>
+                        </Popup>
+                      </Polygon>
+                    );
+                  })}
+
+                  {/* Biochar Application layer as standard markers, if enabled */}
+                  {showAppLayer && distributions?.filter(d => d.applications && d.applications.length > 0).map((d, dIdx) => {
+                    const sLat = ((dIdx * 41 + 19) % 100 - 50) / 330;
+                    const sLng = ((dIdx * 61 + 11) % 100 - 50) / 330;
+                    const appLat = parseFloat(d.latitude) || (18.4804 + sLat);
+                    const appLng = parseFloat(d.longitude) || (73.8267 + sLng);
+                    return (
+                      <Marker key={`d-${d.distribution_id || dIdx}`} position={[appLat, appLng]} icon={ApplicationIcon}>
+                        <Popup>
+                          <div style={{ minWidth: 160 }}>
+                            <div style={{ fontWeight: 700, marginBottom: 4, color: '#1e40af' }}>{d.distribution_id}</div>
+                            <div style={{ fontSize: 12, color: '#555', marginBottom: 6 }}>
+                              Quantity: <strong>{d.quantity_kg} kg</strong>
+                            </div>
+                            <button
+                              onClick={() => setActiveModule('distribution')}
+                              style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 700, width: '100%' }}
+                            >
+                              View Distribution →
+                            </button>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    );
+                  })}
+                </MapContainer>
+
+                {/* Map style toggles overlay (like reference) */}
+                <div className="absolute bottom-5 left-5 z-[400] flex gap-2">
+                  <div className="bg-[#0b2921]/90 backdrop-blur-md border border-[#164235] rounded-lg px-3 py-1.5 flex items-center gap-3 shadow-xl">
+                    <span className="text-white text-[11px] font-semibold flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
+                      Map Style
+                    </span>
+                    <button className="bg-[#f59e0b] hover:bg-[#d97706] transition-colors text-[#0b2921] px-2 py-0.5 rounded text-[10px] font-bold tracking-wide">
+                      RGB
+                    </button>
+                    <button className="bg-transparent hover:bg-white/10 transition-colors text-[#a0b0a8] px-2 py-0.5 rounded text-[10px] font-medium border border-[#1d4d3f]">
+                      False Colour
+                    </button>
+                    <button className="bg-transparent hover:bg-white/10 transition-colors text-[#a0b0a8] px-2 py-0.5 rounded text-[10px] font-medium border border-[#1d4d3f] flex items-center gap-1">
+                      Labels
+                      <div className="w-5 h-3 bg-[#10b981] rounded-full relative ml-1">
+                        <div className="w-2.5 h-2.5 bg-[#0b2921] rounded-full absolute right-0.5 top-0.5"></div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
