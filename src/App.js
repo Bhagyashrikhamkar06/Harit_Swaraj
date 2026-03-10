@@ -775,71 +775,73 @@ const HaritSwarajMRV = () => {
             </div>
           </div>
 
-          {/* KPI Cards Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
-            {[
-              {
-                label: "Biomass Identified",
-                value: (biomassPlots.reduce((acc, p) => acc + (parseFloat(p.expected_biomass) || 0), 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
-                dotColor: "bg-blue-600",
-                icon: <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 0 1 10 10" /><path d="M12 6v6l4 2" /><circle cx="12" cy="12" r="10" opacity=".3" /><path d="m8 14 4-8 4 8" /><path d="M9.5 11h5" /></svg>
-              },
-              {
-                label: "Biomass Transported",
-                value: (transports?.filter(t => t.type === 'inbound').reduce((acc, t) => acc + (parseFloat(t.quantity_kg) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
-                dotColor: "bg-orange-500",
-                icon: <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="2" /><path d="M16 8h4l3 3v5h-7V8Z" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>
-              },
-              {
-                label: "Biomass Processed",
-                value: (biocharBatches?.reduce((acc, b) => acc + (parseFloat(b.biomass_input) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
-                dotColor: "bg-amber-400",
-                icon: <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 20h20" /><path d="M5 20V10l7-7 7 7v10" /><path d="M9 20v-5h6v5" /></svg>
-              },
-              {
-                label: "Biochar Manufactured",
-                value: (dashboardStats?.total_biochar_produced ? (dashboardStats.total_biochar_produced / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 }) : '0'),
-                dotColor: "bg-emerald-500",
-                icon: <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 16v-4a4 4 0 0 0-8 0v4" /><path d="M3 16h18" /><path d="M2 20h20" /><path d="M12 8V4" /><path d="M8 8V6" /><path d="M16 8V6" /></svg>
-              },
-              {
-                label: "Biochar Shipped",
-                value: (transports?.filter(t => t.type === 'outbound').reduce((acc, t) => acc + (parseFloat(t.quantity_kg) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
-                dotColor: "bg-indigo-500",
-                icon: <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14" /><path d="m7.5 4.27 9 5.15" /><polyline points="3.29 7 12 12 20.71 7" /><line x1="12" x2="12" y1="22" y2="12" /><circle cx="18.5" cy="15.5" r="2.5" /><path d="M20.27 17.27 22 19" /></svg>
-              },
-              {
-                label: "Biochar Applied",
-                value: (distributions?.filter(d => d.applications && d.applications.length > 0).reduce((acc, d) => acc + (parseFloat(d.quantity_kg) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
-                dotColor: "bg-rose-500",
-                icon: <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" /></svg>
-              }
-            ].map((kpi, idx) => (
-              <div
-                key={idx}
-                className="bg-white rounded-[20px] p-[22px] flex items-center shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden"
-              >
-                {/* Icon Wrapper */}
-                <div className="w-[54px] h-[54px] rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 mr-4 text-slate-500 shadow-sm">
-                  {kpi.icon}
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-[13px] font-semibold text-slate-500 tracking-wide truncate pr-2">
-                      {kpi.label}
-                    </span>
-                    <div className={`w-2 h-2 rounded-full ${kpi.dotColor} shrink-0`} />
-                  </div>
-
-                  <div className="text-[26px] font-bold text-slate-800 tracking-tight leading-none flex items-baseline mt-1.5">
-                    {kpi.value}
-                    <span className="text-[12px] font-semibold text-slate-400 ml-1.5 uppercase tracking-wider">Tons</span>
-                  </div>
-                </div>
+          {/* KPI Dashboard Section mimicking Reference */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
+            {/* Header of the white card */}
+            <div className="px-8 pt-8 pb-4">
+              <div className="flex items-center gap-2 mb-8">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+                <h3 className="text-xs font-bold text-gray-700 uppercase tracking-widest">
+                  Supply Chain Performance
+                </h3>
               </div>
-            ))}
+
+              {/* Grid of 6 metrics */}
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-y-10 gap-x-8 mb-4">
+                {[
+                  {
+                    label: "Biomass Identified",
+                    value: (biomassPlots.reduce((acc, p) => acc + (parseFloat(p.expected_biomass) || 0), 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
+                    icon: <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 0 1 10 10" /><path d="M12 6v6l4 2" /><circle cx="12" cy="12" r="10" opacity=".3" /><path d="m8 14 4-8 4 8" /><path d="M9.5 11h5" /></svg>
+                  },
+                  {
+                    label: "Biomass Transported",
+                    value: (transports?.filter(t => t.type === 'inbound').reduce((acc, t) => acc + (parseFloat(t.quantity_kg) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
+                    icon: <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="2" /><path d="M16 8h4l3 3v5h-7V8Z" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>
+                  },
+                  {
+                    label: "Biomass Processed",
+                    value: (biocharBatches?.reduce((acc, b) => acc + (parseFloat(b.biomass_input) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
+                    icon: <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 20h20" /><path d="M5 20V10l7-7 7 7v10" /><path d="M9 20v-5h6v5" /></svg>
+                  },
+                  {
+                    label: "Biochar Manufactured",
+                    value: (dashboardStats?.total_biochar_produced ? (dashboardStats.total_biochar_produced / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 }) : '0'),
+                    icon: <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 16v-4a4 4 0 0 0-8 0v4" /><path d="M3 16h18" /><path d="M2 20h20" /><path d="M12 8V4" /><path d="M8 8V6" /><path d="M16 8V6" /></svg>
+                  },
+                  {
+                    label: "Biochar Shipped",
+                    value: (transports?.filter(t => t.type === 'outbound').reduce((acc, t) => acc + (parseFloat(t.quantity_kg) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
+                    icon: <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14" /><path d="m7.5 4.27 9 5.15" /><polyline points="3.29 7 12 12 20.71 7" /><line x1="12" x2="12" y1="22" y2="12" /><circle cx="18.5" cy="15.5" r="2.5" /><path d="M20.27 17.27 22 19" /></svg>
+                  },
+                  {
+                    label: "Biochar Applied",
+                    value: (distributions?.filter(d => d.applications && d.applications.length > 0).reduce((acc, d) => acc + (parseFloat(d.quantity_kg) || 0) / 1000, 0)).toLocaleString(undefined, { maximumFractionDigits: 1 }) || '0',
+                    icon: <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" /></svg>
+                  }
+                ].map((kpi, idx) => (
+                  <div key={idx} className="flex flex-col">
+                    <div className="text-[34px] md:text-[40px] font-semibold text-gray-900 leading-none mb-3 tracking-tight">
+                      {kpi.value}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[10.5px] font-bold text-gray-500 uppercase tracking-widest">
+                      <span className="text-[#10b981]">
+                        {kpi.icon}
+                      </span>
+                      {kpi.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Bottom info banner (like the yellow one in the reference) */}
+            <div className="bg-[#fffdf2] px-8 py-3.5 border-t border-[#fef3c7] text-[11px] font-bold text-amber-800 flex items-center gap-2">
+              <span className="text-amber-500" style={{ fontSize: '14px' }}>💡</span>
+              Considering the current operations, investors and auditors can expect these real-time MRV figures to update automatically upon new batch submissions.
+            </div>
           </div>
 
 
