@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Backend Test</title>
+</head>
+
+<body>
+    <h1>Testing Backend Connection</h1>
+    <button onclick="testBackend()">Test Backend</button>
+    <div id="result"></div>
+
+    <script>
+        async function testBackend() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: 'owner1',
+                        password: 'owner123'
+                    })
+                });
+
+                const data = await response.json();
+                resultDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                resultDiv.style.color = 'green';
+            } catch (error) {
+                resultDiv.innerHTML = 'Error: ' + error.message;
+                resultDiv.style.color = 'red';
+            }
+        }
+    </script>
+</body>
+
+</html>
