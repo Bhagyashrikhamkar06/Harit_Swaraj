@@ -57,3 +57,5 @@ start_app.bat
 start_backend.bat
 test_connection.html
 dashboard_simple.js
+
+.env
