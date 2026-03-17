@@ -137,12 +137,14 @@ const HaritSwarajMRV = () => {
     }
 
     // Sanitize apiUrl on mount
+    /* 
     const savedUrl = localStorage.getItem('api_url');
     if (savedUrl && savedUrl.endsWith('/')) {
       const cleanUrl = savedUrl.replace(/\/$/, '');
       setApiUrl(cleanUrl);
       localStorage.setItem('api_url', cleanUrl);
     }
+    */
   }, []);
 
   // PWA install prompt listener - DISABLED per user request
