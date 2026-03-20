@@ -45,7 +45,7 @@ const HaritSwarajMRV = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const [apiUrl, setApiUrl] = useState(process.env.REACT_APP_API_URL || 'http://localhost:8000');
+  const [apiUrl, setApiUrl] = useState(process.env.REACT_APP_API_URL || '');
   const [showServerSettings] = useState(false);
   const [dashboardSelectedPlot, setDashboardSelectedPlot] = useState(null);
   const [dashboardPlotTab, setDashboardPlotTab] = useState('Farmer Details');
