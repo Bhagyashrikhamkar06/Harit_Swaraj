@@ -11,12 +11,14 @@ import {
     Activity,
     Box,
     ArrowRight,
-    ClipboardCheck
+    ClipboardCheck,
+    Users
 } from 'lucide-react';
 import BiomassIdView from './BiomassIdView';
 import BiomassHarvestView from './BiomassHarvestView';
 import TransportView from './TransportView';
 import ManufacturingView from './ManufacturingView';
+import CustomerIdentificationView from './CustomerIdentificationView';
 import DistributionView from './DistributionView';
 
 const SupplyChainWizard = (props) => {
@@ -59,6 +61,15 @@ const SupplyChainWizard = (props) => {
             color: 'text-orange-500',
             bgColor: 'bg-orange-500/10',
             component: ManufacturingView
+        },
+        {
+            id: 'customer',
+            title: 'End-User ID',
+            description: 'Identify and register biochar customers',
+            icon: Users,
+            color: 'text-emerald-600',
+            bgColor: 'bg-emerald-600/10',
+            component: CustomerIdentificationView
         },
         {
             id: 'distribution',
@@ -140,6 +151,8 @@ const SupplyChainWizard = (props) => {
                     // Note: ManufacturingView uses these fetch functions to refresh data
                     onSuccess: handleSuccess
                 };
+            case 'customer':
+                return baseProps;
             case 'distribution':
                 return {
                     ...baseProps,
@@ -155,23 +168,23 @@ const SupplyChainWizard = (props) => {
     return (
         <div className="space-y-8 animate-fade-in pb-20">
             {/* Wizard Header & Progress */}
-            <div className={`${theme === 'dark' ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-gray-100'} rounded-[2.5rem] shadow-xl border p-6 md:p-8 relative overflow-hidden transition-all duration-500`}>
+            <div className={`${theme === 'dark' ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-gray-100'} rounded-3xl shadow-xl border p-4 md:p-6 relative overflow-hidden transition-all duration-500`}>
                 {/* Decorative Background Elements */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -mr-32 -mt-32" />
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -ml-32 -mb-32" />
 
                 <div className="relative z-10">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                         <div>
-                            <div className="flex items-center gap-3 mb-2">
+                            <div className="flex items-center gap-3 mb-1">
                                 <div className={`p-2 rounded-xl ${theme === 'dark' ? 'bg-emerald-500/20' : 'bg-emerald-50'}`}>
-                                    <Activity className="text-emerald-500" size={20} />
+                                    <Activity className="text-emerald-500" size={18} />
                                 </div>
-                                <h1 className={`text-2xl md:text-3xl font-black italic uppercase tracking-tighter ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                                    Supply Chain <span className="text-emerald-600">Workflow</span>
+                                <h1 className={`text-xl md:text-2xl font-bold tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                                    Supply Chain <span className="text-emerald-600 font-extrabold">Workflow</span>
                                 </h1>
                             </div>
-                            <p className={`${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} font-medium`}>
+                            <p className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} font-medium`}>
                                 Complete the end-to-end biochar audit trail step by step.
                             </p>
                         </div>
@@ -249,21 +262,21 @@ const SupplyChainWizard = (props) => {
             </div>
 
             {/* Step Summary Banner */}
-            <div className={`p-6 rounded-[2rem] flex items-center gap-5 border animate-in slide-in-from-bottom duration-500 ${theme === 'dark' ? 'bg-slate-900/40 border-slate-800' : 'bg-slate-50/50 border-slate-100'}`}>
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${steps[currentStep].bgColor} ${steps[currentStep].color} shadow-inner`}>
-                    {React.createElement(steps[currentStep].icon, { size: 28 })}
+            <div className={`p-4 rounded-3xl flex items-center gap-4 border animate-in slide-in-from-bottom duration-500 ${theme === 'dark' ? 'bg-slate-900/40 border-slate-800' : 'bg-slate-50/50 border-slate-100'}`}>
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${steps[currentStep].bgColor} ${steps[currentStep].color} shadow-inner`}>
+                    {React.createElement(steps[currentStep].icon, { size: 24 })}
                 </div>
                 <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-0.5">
                         <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${theme === 'dark' ? 'bg-slate-800 text-slate-400' : 'bg-white text-slate-500 shadow-sm'}`}>
                             Step {currentStep + 1} of {steps.length}
                         </span>
-                        <ArrowRight size={14} className="text-slate-300" />
+                        <ArrowRight size={12} className="text-slate-300" />
                         <span className={`text-[10px] font-black uppercase tracking-widest text-emerald-600`}>
                             {steps[currentStep].title}
                         </span>
                     </div>
-                    <h3 className={`text-xl font-bold truncate ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{steps[currentStep].description}</h3>
+                    <h3 className={`text-lg font-bold truncate ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{steps[currentStep].description}</h3>
                 </div>
                 <div className="hidden lg:flex items-center gap-2">
                     <div className="flex -space-x-2">

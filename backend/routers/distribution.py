@@ -17,7 +17,7 @@ router = APIRouter(
 @router.post("/record", response_model=DistributionResponse, status_code=status.HTTP_201_CREATED)
 async def record_distribution(
     batch_id: int = Form(...),
-    customer_id: Optional[str] = Form(None),
+    customer_id: Optional[int] = Form(None),
     planned_use: Optional[str] = Form(None),
     location: Optional[str] = Form(None),
     quantity_kg: float = Form(...),

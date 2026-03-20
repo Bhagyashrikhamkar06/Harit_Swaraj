@@ -1,9 +1,9 @@
 import React from 'react';
-import { Trash2, MapPin, AlertTriangle, Eye, ExternalLink, Clock } from 'lucide-react';
+import { Trash2, MapPin, AlertTriangle, Eye, ExternalLink, Clock, ArrowRight } from 'lucide-react';
 import DataTable from './DataTable';
 
 
-const MyPlotsView = ({ plots, harvests, transports, batches, onEdit, onDelete, apiUrl, theme, variant = 'default' }) => {
+const MyPlotsView = ({ plots, harvests, transports, batches, onEdit, onDelete, onProceed, apiUrl, theme, variant = 'default' }) => {
     const safeDate = (val) => {
         if (!val) return '—';
         const d = new Date(val);
@@ -25,12 +25,12 @@ const MyPlotsView = ({ plots, harvests, transports, batches, onEdit, onDelete, a
                 const mfgDone = bchs.length > 0;
                 const steps = [harvDone, transDone, mfgDone, mfgDone];
                 const labels = ['Harvest', 'Transport', 'Pre-proc', 'Mfg'];
-                const done = [harvDone, transDone, mfgDone].filter(Boolean).length;
-                const total = 3;
+                const done = steps.filter(Boolean).length;
+                const total = 4;
                 return (
                     <div className="flex flex-col items-center gap-1 min-w-[80px]">
                         <div className="flex gap-1 items-center">
-                            {[harvDone, transDone, mfgDone].map((s, i) => (
+                            {steps.map((s, i) => (
                                 <div key={i} title={labels[i]}
                                     className={`h-2 w-5 rounded-full transition-all ${s ? 'bg-emerald-500' : 'bg-gray-200'}`} />
                             ))}
@@ -196,6 +196,38 @@ const MyPlotsView = ({ plots, harvests, transports, batches, onEdit, onDelete, a
                         emptyMessage="Register your first plot to start carbon sequestration monitoring."
                         searchPlaceholder="Search by Plot ID, type, or species…"
                         variant="default"
+                        renderCardFooter={(row) => {
+                            const hrvs = harvests?.filter(h => h.plot_id === row.id) || [];
+                            const harvDone = hrvs.length > 0;
+                            const hrvIds = hrvs.map(h => h.id);
+                            const transDone = (transports?.filter(t => hrvIds.includes(t.harvest_id)) || []).length > 0;
+
+                            if (!harvDone) {
+                                return (
+                                    <button 
+                                        onClick={() => onProceed && onProceed('harvest')}
+                                        className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 active:scale-95 transition-all text-sm mb-2"
+                                    >
+                                        Proceed to Harvesting Form
+                                        <ArrowRight size={16} />
+                                    </button>
+                                );
+                            }
+
+                            if (!transDone) {
+                                return (
+                                    <button 
+                                        onClick={() => onProceed && onProceed('transport')}
+                                        className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-sm mb-2"
+                                    >
+                                        Proceed to Transportation
+                                        <ArrowRight size={16} />
+                                    </button>
+                                );
+                            }
+
+                            return null;
+                        }}
                     />
                 </div>
             </div>

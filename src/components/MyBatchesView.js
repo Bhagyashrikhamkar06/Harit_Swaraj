@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2, Package, Factory, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Trash2, Package, Factory, CheckCircle, Clock, AlertTriangle, ArrowRight } from 'lucide-react';
 import DataTable from './DataTable';
 
 const EfficiencyBar = ({ ratio }) => {
@@ -42,7 +42,7 @@ const BatchStatusBadge = ({ status, mlResult }) => {
     );
 };
 
-const MyBatchesView = ({ batches, transports = [], distributions = [], onDelete, theme, variant = 'default' }) => {
+const MyBatchesView = ({ batches, transports = [], distributions = [], onDelete, onProceed, theme, variant = 'default' }) => {
     const safeDate = (dateString) => {
         if (!dateString) return 'Pending';
         const d = new Date(dateString);
@@ -179,6 +179,22 @@ const MyBatchesView = ({ batches, transports = [], distributions = [], onDelete,
                         emptyMessage="No batches found. Start production to record your first batch."
                         searchPlaceholder="Search by Batch ID or status…"
                         variant="default"
+                        renderCardFooter={(row) => {
+                            const isShipped = transports.some(t => t.type === 'outbound' && distributions.some(d => d.id === t.distribution_id && d.batch_id === row.id));
+                            
+                            if (!isShipped) {
+                                return (
+                                    <button 
+                                        onClick={() => onProceed && onProceed('distribution')}
+                                        className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 active:scale-95 transition-all text-sm mb-2"
+                                    >
+                                        Proceed to Distribution
+                                        <ArrowRight size={16} />
+                                    </button>
+                                );
+                            }
+                            return null;
+                        }}
                     />
                 </div>
             </div>

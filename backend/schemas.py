@@ -209,7 +209,7 @@ class UnburnableMethodResponse(UnburnableMethodCreate):
 # --- Distribution ---
 class DistributionBase(BaseModel):
     batch_id: int
-    customer_id: Optional[str]
+    customer_id: Optional[int] = None
     planned_use: Optional[str]
     location: Optional[str]
     quantity_kg: float
@@ -219,7 +219,7 @@ class DistributionCreate(DistributionBase):
     pass
 
 class DistributionUpdate(BaseModel):
-    customer_id: Optional[str] = None
+    customer_id: Optional[int] = None
     planned_use: Optional[str] = None
     location: Optional[str] = None
     quantity_kg: Optional[float] = None
@@ -229,6 +229,25 @@ class DistributionResponse(DistributionBase):
     id: int
     created_at: datetime
     
+    class Config:
+        from_attributes = True
+
+# --- Customer ---
+class CustomerBase(BaseModel):
+    customer_id: str
+    block: Optional[str] = None
+    village: Optional[str] = None
+    contact_number: Optional[str] = None
+    biochar_application: Optional[str] = None
+    expected_demand: Optional[float] = None
+
+class CustomerCreate(CustomerBase):
+    pass
+
+class CustomerResponse(CustomerBase):
+    id: int
+    created_at: datetime
+
     class Config:
         from_attributes = True
 

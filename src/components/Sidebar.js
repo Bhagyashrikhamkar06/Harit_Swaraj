@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     Home, MapPin, Leaf, Truck, Factory, Package,
-    TrendingUp, ChevronLeft, ChevronRight, X, Globe, Settings, Sliders, ShieldCheck
+    TrendingUp, ChevronLeft, ChevronRight, X, Globe, Settings, Sliders, ShieldCheck, Users
 } from 'lucide-react';
 
 const Sidebar = ({
@@ -32,6 +32,7 @@ const Sidebar = ({
         analytics: TrendingUp,
         'technical-ops': Sliders,
         'audit-submission': ShieldCheck,
+        'customer-id': Users,
         settings: Settings
     };
 

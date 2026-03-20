@@ -16,7 +16,18 @@ from auth import hash_password
 from file_storage import UPLOAD_DIR
 
 # Routers
-from routers import auth, plot, harvest, transport, manufacturing, distribution, audit, blockchain, dashboard
+from routers import (
+    auth as auth_router, 
+    plot as plot_router, 
+    harvest as harvest_router, 
+    transport as transport_router, 
+    manufacturing as manufacturing_router, 
+    distribution as distribution_router, 
+    audit as audit_router, 
+    blockchain as blockchain_router, 
+    dashboard as dashboard_router, 
+    customer as customer_router
+)
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -89,18 +100,19 @@ async def startup_event():
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # Include Routers
-app.include_router(auth.router)
-app.include_router(dashboard.router)
-app.include_router(plot.router)
-app.include_router(harvest.router)
-app.include_router(transport.router)
-app.include_router(manufacturing.router)
-app.include_router(distribution.router)
-app.include_router(audit.router)
-app.include_router(blockchain.router)
+app.include_router(auth_router.router)
+app.include_router(dashboard_router.router)
+app.include_router(plot_router.router)
+app.include_router(harvest_router.router)
+app.include_router(transport_router.router)
+app.include_router(manufacturing_router.router)
+app.include_router(distribution_router.router)
+app.include_router(audit_router.router)
+app.include_router(blockchain_router.router)
+app.include_router(customer_router.router)
 from routers import admin
 app.include_router(admin.router)
 
 @app.get("/")
 async def root():
-    return {"message": "Harit Swaraj MRV API is running"}
+    return {"message": "Harit Swaraj MRV API - VERSION 2.0.1"}

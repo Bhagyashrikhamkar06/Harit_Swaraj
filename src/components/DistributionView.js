@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Package, Trash2, CheckCircle, AlertTriangle, Globe, MapPin } from 'lucide-react';
 import DataTable from './DataTable';
 import MediaUploader from './MediaUploader';
-const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, theme, onSuccess }) => {
+const DistributionView = ({ fetchWithAuth, batches, distributions, customers = [], onDelete, theme, onSuccess }) => {
     const [activeTab, setActiveTab] = useState('distribution');
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState('');
@@ -114,8 +114,11 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
         },
         {
             key: 'customer_id',
-            label: 'Customer ID',
-            render: (v) => <span className="font-bold text-gray-900">{v}</span>,
+            label: 'Customer Identity',
+            render: (v) => {
+                const customer = customers.find(c => c.id === v);
+                return <span className="font-bold text-gray-900">{customer ? customer.customer_id : v || '—'}</span>;
+            },
         },
         {
             key: 'batch_id',
@@ -225,15 +228,20 @@ const DistributionView = ({ fetchWithAuth, batches, distributions, onDelete, the
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">Customer ID</label>
-                                    <input
-                                        type="text"
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all"
+                                    <label className="text-sm font-bold text-gray-700">Select Customer Identity</label>
+                                    <select
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all appearance-none"
                                         value={disForm.customer_id}
                                         onChange={e => setDisForm({ ...disForm, customer_id: e.target.value })}
-                                        placeholder="e.g. CUST-001"
                                         required
-                                    />
+                                    >
+                                        <option value="">-- Select Customer --</option>
+                                        {Array.isArray(customers) && customers.map(c => (
+                                            <option key={c.id} value={c.id}>
+                                                {c.customer_id} ({c.village})
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-gray-700">Planned Use</label>

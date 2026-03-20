@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, ShieldCheck, CheckCircle, AlertTriangle, Upload, Flame, Box, Droplets, Trash2, ArrowRight } from 'lucide-react';
+import { Settings, ShieldCheck, CheckCircle, AlertTriangle, Upload, Flame, Box, Droplets, Trash2, ArrowRight, Sliders } from 'lucide-react';
 import MediaUploader from './MediaUploader';
 
 const TechnicalOperationsView = ({ fetchWithAuth, harvests, batches, theme }) => {
@@ -54,7 +54,7 @@ const TechnicalOperationsView = ({ fetchWithAuth, harvests, batches, theme }) =>
                 <div className={`px-6 py-5 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${theme === 'dark' ? 'bg-green-900 border-slate-700' : 'bg-green-700 border-green-800'}`}>
                     <div className="flex items-center gap-3">
                         <div className="p-2 rounded-lg bg-white/10">
-                            <Settings size={20} className="text-white" />
+                            <Sliders size={20} className="text-white" />
                         </div>
                         <div>
                             <h2 className="text-lg font-semibold text-white">Biomass Pre-processing</h2>

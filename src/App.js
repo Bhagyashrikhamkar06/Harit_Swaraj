@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Upload, CheckCircle, AlertTriangle, Users, Leaf, Factory, TrendingUp, Menu, X, Home, FileText, Truck, Droplet, MapPin, ClipboardCheck, Flame, Package, Camera, Trash2, Check, LogOut, LogIn, BarChart3, Database, Globe, Wifi, WifiOff, Download, Award, ArrowUpRight, Activity, Clock, Settings, Server, ShieldCheck } from 'lucide-react';
+import { Upload, CheckCircle, AlertTriangle, Users, Leaf, Factory, TrendingUp, Menu, X, Home, FileText, Truck, Droplet, MapPin, ClipboardCheck, Flame, Package, Camera, Trash2, Check, LogOut, LogIn, BarChart3, Database, Globe, Wifi, WifiOff, Download, Award, ArrowUpRight, Activity, Clock, Settings, Sliders, Server, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import BiomassIdView from './components/BiomassIdView';
 import BiomassHarvestView from './components/BiomassHarvestView';
@@ -15,6 +15,7 @@ import DataTable from './components/DataTable';
 import TechnicalOperationsView from './components/TechnicalOperationsView';
 import AuditSubmissionView from './components/AuditSubmissionView';
 import SupplyChainWizard from './components/SupplyChainWizard';
+import CustomerIdentificationView from './components/CustomerIdentificationView';
 import { MapContainer, TileLayer, Marker, Popup, Polygon } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -44,7 +45,7 @@ const HaritSwarajMRV = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const [apiUrl, setApiUrl] = useState('');
+  const [apiUrl, setApiUrl] = useState(process.env.REACT_APP_API_URL || 'http://localhost:8000');
   const [showServerSettings] = useState(false);
   const [dashboardSelectedPlot, setDashboardSelectedPlot] = useState(null);
   const [dashboardPlotTab, setDashboardPlotTab] = useState('Farmer Details');
@@ -74,6 +75,7 @@ const HaritSwarajMRV = () => {
   const [harvests, setHarvests] = useState([]);
   const [transports, setTransports] = useState([]);
   const [distributions, setDistributions] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [dashboardStats, setDashboardStats] = useState(null);
   const [editingPlot, setEditingPlot] = useState(null);
 
@@ -234,7 +236,8 @@ const HaritSwarajMRV = () => {
       fetchBatches(),
       fetchHarvests(),
       fetchTransports(),
-      fetchDistributions()
+      fetchDistributions(),
+      fetchCustomers()
     ]);
     setLoading(false);
     return results;
@@ -291,6 +294,16 @@ const HaritSwarajMRV = () => {
     } catch (err) {
       console.error('Error fetching distributions:', err);
       setDistributions([]);
+    }
+  };
+
+  const fetchCustomers = async () => {
+    try {
+      const res = await fetchWithAuth('/customers/all');
+      const data = await res.json();
+      setCustomers(data);
+    } catch (err) {
+      console.error('Error fetching customers:', err);
     }
   };
 
@@ -400,10 +413,10 @@ const HaritSwarajMRV = () => {
   };
 
   const modules = {
-    owner: ['dashboard', 'supply-chain', 'biomass-id', 'harvest', 'transport', 'manufacturing', 'technical-ops', 'distribution', 'customer-id', 'my-plots', 'my-batches', 'settings'],
+    owner: ['dashboard', 'supply-chain', 'biomass-id', 'harvest', 'transport', 'technical-ops', 'manufacturing', 'customer-id', 'distribution', 'my-plots', 'my-batches', 'settings'],
     farmer: ['dashboard', 'biomass-id', 'harvest', 'my-plots', 'settings'],
     auditor: ['dashboard', 'audit-submission', 'all-plots', 'all-batches', 'settings'],
-    admin: ['dashboard', 'supply-chain', 'biomass-id', 'all-plots', 'harvest', 'transport', 'manufacturing', 'technical-ops', 'distribution', 'customer-id', 'all-batches', 'settings']
+    admin: ['dashboard', 'supply-chain', 'biomass-id', 'all-plots', 'harvest', 'transport', 'technical-ops', 'manufacturing', 'customer-id', 'distribution', 'all-batches', 'settings']
   };
 
   const moduleIcons = {
@@ -417,7 +430,7 @@ const HaritSwarajMRV = () => {
     'my-batches': Package,
     'all-plots': MapPin,
     'all-batches': Package,
-    'technical-ops': Settings,
+    'technical-ops': Sliders,
     'audit-submission': ShieldCheck,
     'supply-chain': Activity,
     'customer-id': Users,
@@ -435,7 +448,7 @@ const HaritSwarajMRV = () => {
     'all-plots': t('biomass.all_plots'),
     'all-batches': t('manufacturing.all_batches'),
     dashboard: t('dashboard.title'),
-    'technical-ops': 'Manufacturing Record',
+    'technical-ops': 'Biomass Pre-processing',
     'audit-submission': 'Independent Audit',
     'supply-chain': 'Process Workflow',
     'customer-id': 'Customer Identification',
@@ -850,31 +863,30 @@ const HaritSwarajMRV = () => {
 
 
           {/* Plot Performance Container (Reference UI Match) */}
-          <div className="bg-[#0b2921] rounded-xl overflow-hidden shadow-lg mb-8 border border-[#164235]">
-            {/* Header */}
-            <div className="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between border-b border-[#164235] gap-2">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8 mt-6">
+            <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
               <div>
-                <h3 className="text-white text-lg font-bold tracking-wide">Plot performance</h3>
-                <p className="text-[#a0b0a8] text-xs mt-1">
-                  All information provided here is verified and authentic*
-                  <span className="text-[#eab308] ml-1 cursor-pointer hover:underline">Check Sources</span> for more information.
+                <h2 className="text-xl font-bold text-gray-900 mb-2 tracking-tight">Plot performance</h2>
+                <p className="text-sm text-gray-500">
+                  All information provided here is verified and authentic* 
+                  <span className="text-amber-500 ml-1 cursor-pointer hover:underline font-medium">Check Sources</span> for more information.
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-col md:flex-row h-[500px]">
+            <div className="flex flex-col md:flex-row h-[500px] border border-gray-200 rounded-xl overflow-hidden">
               {/* Left Panel: Plot List or Details */}
-              <div className="w-full md:w-1/3 bg-[#0d3429] p-4 overflow-y-auto border-r border-[#164235] custom-scrollbar relative">
+              <div className="w-full md:w-1/3 bg-gray-50 p-4 border-r border-gray-200 overflow-y-auto custom-scrollbar relative">
                 {!dashboardSelectedPlot ? (
                   <>
                     <div className="mb-4 relative">
                       <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                        <svg className="w-4 h-4 text-[#759588]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                       </div>
-                      <input type="text" placeholder="Search plots here" className="w-full bg-[#0b2921] border border-[#1d4d3f] text-white text-sm rounded-lg focus:ring-[#10b981] focus:border-[#10b981] block pl-10 p-2.5 placeholder-[#759588]" />
+                      <input type="text" placeholder="Search plots here" className="w-full bg-white border border-gray-200 text-gray-800 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block pl-10 p-2.5 placeholder-gray-400" />
                       <div className="absolute inset-y-0 right-3 flex items-center gap-3">
-                        <svg className="w-4 h-4 text-[#759588] cursor-pointer hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
-                        <svg className="w-4 h-4 text-[#759588] cursor-pointer hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                        <svg className="w-4 h-4 text-gray-400 cursor-pointer hover:text-emerald-600 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                        <svg className="w-4 h-4 text-gray-400 cursor-pointer hover:text-emerald-600 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
                       </div>
                     </div>
 
@@ -886,27 +898,27 @@ const HaritSwarajMRV = () => {
                         return (
                           <div
                             key={plot.plot_id}
-                            className="bg-[#124234] border border-[#1d4d3f] rounded-lg overflow-hidden cursor-pointer hover:border-[#10b981] transition-all relative group"
+                            className="bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden cursor-pointer hover:border-emerald-500 hover:shadow-md transition-all relative group"
                             onClick={() => setDashboardSelectedPlot(plot)}
                           >
-                            <div className="h-[84px] relative overflow-hidden bg-slate-800">
+                            <div className="h-[84px] relative overflow-hidden bg-gray-100">
                               <img
                                 src={`https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=200&h=150&fit=crop&q=80&sig=${randomImgId}`}
                                 alt={plot.species}
                                 className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-500"
                               />
-                              <div className="absolute top-1.5 right-1.5 bg-[#0b2921]/60 p-1 rounded-full backdrop-blur-sm">
+                              <div className="absolute top-1.5 right-1.5 bg-black/40 p-1 rounded-full backdrop-blur-sm">
                                 <svg className={`w-3.5 h-3.5 ${isFaved ? 'text-red-500 fill-current' : 'text-white'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                                 </svg>
                               </div>
                             </div>
                             <div className="p-2.5">
-                              <div className="text-white text-[11px] font-bold truncate mb-0.5">{plot.plot_id} Afforestation</div>
-                              <div className="text-[#a0b0a8] text-[9.5px] truncate line-clamp-1 opacity-80">{plot.location_name || 'Farmer: Local SHG'}, {plot.species}</div>
-                              <div className="text-[#fff] bg-[#0b2921] px-1.5 py-0.5 rounded text-[9.5px] mt-1.5 font-semibold inline-flex items-center gap-1 border border-[#164235]">
-                                <svg className="w-2.5 h-2.5 text-[#10b981]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V10z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 21V9h6v12"></path></svg>
-                                {sizeHa} (ha)
+                              <div className="text-emerald-900 text-[11px] font-bold truncate mb-0.5">{plot.plot_id} Afforestation</div>
+                              <div className="text-gray-500 text-[9.5px] truncate line-clamp-1 opacity-90">{plot.village || plot.location_name || 'Farmer: Local SHG'}, {plot.district || plot.species}</div>
+                              <div className="bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded text-[9.5px] mt-1.5 font-semibold inline-flex items-center gap-1 border border-emerald-100">
+                                <svg className="w-2.5 h-2.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V10z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 21V9h6v12"></path></svg>
+                                {plot.area || sizeHa} (ha)
                               </div>
                             </div>
                           </div>
@@ -915,114 +927,116 @@ const HaritSwarajMRV = () => {
                     </div>
                   </>
                 ) : (
-                  <div className="animate-fade-in text-white h-full flex flex-col">
-                    <div className="flex items-center gap-3 mb-4 cursor-pointer text-[#a0b0a8] hover:text-white transition-colors" onClick={() => setDashboardSelectedPlot(null)}>
-                      <div className="bg-[#10b981]/20 p-1.5 rounded-md border border-[#10b981]/30 text-[#10b981]">
+                  <div className="animate-fade-in flex flex-col h-full text-gray-800">
+                    <div className="flex items-center gap-3 mb-4 cursor-pointer text-gray-500 hover:text-emerald-700 transition-colors" onClick={() => setDashboardSelectedPlot(null)}>
+                      <div className="bg-emerald-50 p-1.5 rounded-md border border-emerald-100 text-emerald-600">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                       </div>
-                      <span className="text-sm font-bold truncate flex-1">{dashboardSelectedPlot.plot_id} Afforestatio...</span>
-                      <span className="text-[10px] text-[#22c55e] font-semibold flex items-center gap-1 shrink-0"><span className="w-1.5 h-1.5 bg-[#22c55e] rounded-full"></span> Farmer Niraj Shinde</span>
-                      <span className="text-[10px] bg-[#164235] px-1.5 py-0.5 rounded ml-1 shrink-0">{(parseFloat(dashboardSelectedPlot.expected_biomass) / 10).toFixed(1)} (ha)</span>
+                      <span className="text-sm font-bold truncate flex-1 text-gray-900">{dashboardSelectedPlot.plot_id} Afforestation...</span>
+                      <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1 shrink-0"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Farmer {dashboardSelectedPlot.farmer_name || 'Local'}</span>
+                      <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded ml-1 shrink-0 font-medium">{dashboardSelectedPlot.area || (parseFloat(dashboardSelectedPlot.expected_biomass) / 10).toFixed(1)} (ha)</span>
                     </div>
 
-                    <div className="flex bg-[#0b2921] rounded-lg p-1 mb-4 border border-[#164235] text-[10px] font-semibold text-center overflow-x-auto whitespace-nowrap custom-scrollbar shrink-0">
-                      {['Overview', 'Scientific Data', 'Impact', 'Farmer Details'].map(tab => (
+                    <div className="flex bg-white rounded-lg p-1 mb-4 border border-gray-200 text-[10px] font-semibold text-center overflow-x-auto whitespace-nowrap custom-scrollbar shrink-0 shadow-sm">
+                      {['Overview', 'Scientific Data', 'Impact', 'Plot & Farmer Details'].map(tab => (
                         <button
                           key={tab}
                           onClick={() => setDashboardPlotTab(tab)}
-                          className={`flex-1 min-w-[80px] px-2 py-1.5 rounded-md transition-all ${dashboardPlotTab === tab ? 'bg-[#10b981] text-[#0b2921] font-bold shadow-sm' : 'text-[#a0b0a8] hover:bg-[#0d3429] hover:text-white'}`}
+                          className={`flex-1 min-w-[80px] px-2 py-1.5 rounded-md transition-all ${dashboardPlotTab === tab ? 'bg-emerald-600 text-white font-bold shadow-md' : 'text-gray-500 hover:bg-emerald-50 hover:text-emerald-700'}`}
                         >
                           {tab}
                         </button>
                       ))}
                     </div>
 
-                    {dashboardPlotTab === 'Farmer Details' && (
-                      <div className="bg-[#09221a] p-5 rounded-xl border border-[#164235] flex-1 overflow-y-auto custom-scrollbar">
+                    {dashboardPlotTab === 'Plot & Farmer Details' && (
+                      <div className="bg-white p-5 rounded-xl border border-gray-200 flex-1 overflow-y-auto custom-scrollbar shadow-inner">
                         <div className="grid grid-cols-2 gap-y-6 gap-x-4">
                           <div>
-                            <div className="text-white text-base font-bold mb-0.5">28</div>
-                            <div className="text-[#a0b0a8] text-[9px] tracking-widest uppercase font-semibold">AGE</div>
+                            <div className="text-gray-900 text-base font-bold mb-0.5">{dashboardSelectedPlot.village || 'N/A'}</div>
+                            <div className="text-gray-400 text-[9px] tracking-widest uppercase font-bold">VILLAGE</div>
                           </div>
                           <div>
-                            <div className="text-white text-base font-bold mb-0.5">Male</div>
-                            <div className="text-[#a0b0a8] text-[9px] tracking-widest uppercase font-semibold">GENDER</div>
-                          </div>
-
-                          <div>
-                            <div className="text-white text-[13px] font-bold mb-0.5 tracking-wide">(91) 12345-12345</div>
-                            <div className="text-[#a0b0a8] text-[9px] tracking-widest uppercase font-semibold">CONTACT NUMBER</div>
-                          </div>
-                          <div>
-                            <div className="text-white text-[13px] font-bold mb-0.5 tracking-wide">**** **** **** 9875</div>
-                            <div className="text-[#a0b0a8] text-[9px] tracking-widest uppercase font-semibold">AADHAR NUMBER</div>
+                            <div className="text-gray-900 text-base font-bold mb-0.5">{dashboardSelectedPlot.taluka || 'N/A'}</div>
+                            <div className="text-gray-400 text-[9px] tracking-widest uppercase font-bold">TALUKA</div>
                           </div>
 
                           <div>
-                            <div className="text-white text-[13px] font-bold mb-0.5 tracking-wide">1234567891****</div>
-                            <div className="text-[#a0b0a8] text-[9px] tracking-widest uppercase font-semibold">BANK ACCOUNT NUMBER</div>
+                            <div className="text-gray-900 text-[13px] font-bold mb-0.5 tracking-wide">{dashboardSelectedPlot.district || 'N/A'}</div>
+                            <div className="text-gray-400 text-[9px] tracking-widest uppercase font-bold">DISTRICT</div>
                           </div>
                           <div>
-                            <div className="text-white text-[13px] font-bold mb-0.5 tracking-wide">SBIN0000537</div>
-                            <div className="text-[#a0b0a8] text-[9px] tracking-widest uppercase font-semibold">IFSC CODE</div>
-                          </div>
-
-                          <div>
-                            <div className="text-white text-[13px] font-bold mb-0.5">10</div>
-                            <div className="text-[#a0b0a8] text-[9px] tracking-widest uppercase font-semibold flex items-center gap-1">TOTAL AREA OWNED <span className="normal-case opacity-70">(ha)</span></div>
-                          </div>
-                          <div>
-                            <div className="text-white text-[13px] font-bold mb-0.5">3.75</div>
-                            <div className="text-[#a0b0a8] text-[9px] tracking-widest uppercase font-semibold">TOTAL AREA UNDER FORESTATION</div>
+                            <div className="text-gray-900 text-[13px] font-bold mb-0.5 tracking-wide">{dashboardSelectedPlot.survey_number || 'N/A'}</div>
+                            <div className="text-gray-400 text-[9px] tracking-widest uppercase font-bold">SURVEY / GAT NUMBER</div>
                           </div>
 
                           <div>
-                            <div className="inline-block border border-[#759588] px-2.5 py-0.5 rounded-full text-white text-[10px] font-bold mb-0.5">FARMING</div>
-                            <div className="text-[#a0b0a8] text-[9px] tracking-widest uppercase font-semibold mt-1">MAIN OCCUPATION</div>
+                            <div className="text-gray-900 text-[13px] font-bold mb-0.5 tracking-wide">{dashboardSelectedPlot.species || 'N/A'}</div>
+                            <div className="text-gray-400 text-[9px] tracking-widest uppercase font-bold">SPECIES</div>
                           </div>
                           <div>
-                            <div className="inline-block border border-[#759588] px-2.5 py-0.5 rounded-full text-white text-[10px] font-bold mb-0.5">PRIVATE</div>
-                            <div className="text-[#a0b0a8] text-[9px] tracking-widest uppercase font-semibold mt-1">LAND OWNERSHIP</div>
+                            <div className="text-gray-900 text-[13px] font-bold mb-0.5 tracking-wide">{dashboardSelectedPlot.type || 'N/A'}</div>
+                            <div className="text-gray-400 text-[9px] tracking-widest uppercase font-bold">TYPE</div>
+                          </div>
+
+                          <div>
+                            <div className="text-gray-900 text-[13px] font-bold mb-0.5">{dashboardSelectedPlot.area || 'N/A'}</div>
+                            <div className="text-gray-400 text-[9px] tracking-widest uppercase font-bold flex items-center gap-1">PLOT AREA <span className="normal-case opacity-70">(ha)</span></div>
+                          </div>
+                          <div>
+                            <div className="text-gray-900 text-[13px] font-bold mb-0.5">{dashboardSelectedPlot.expected_biomass || '0.0'}</div>
+                            <div className="text-gray-400 text-[9px] tracking-widest uppercase font-bold">ESTIMATED YIELD (t)</div>
+                          </div>
+
+                          <div className="col-span-2 mt-2 pt-4 border-t border-gray-100 flex gap-2">
+                            <div>
+                              <div className="inline-block border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 rounded-full text-emerald-700 text-[10px] font-bold mb-0.5">VERIFIED</div>
+                              <div className="text-gray-400 text-[9px] tracking-widest uppercase font-bold mt-1">STATUS</div>
+                            </div>
+                            <div>
+                              <div className="inline-block border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 rounded-full text-emerald-700 text-[10px] font-bold mb-0.5">PRIVATE</div>
+                              <div className="text-gray-400 text-[9px] tracking-widest uppercase font-bold mt-1">LAND OWNERSHIP</div>
+                            </div>
                           </div>
                         </div>
                       </div>
                     )}
 
                     {dashboardPlotTab === 'Scientific Data' && (
-                      <div className="bg-[#09221a] p-5 rounded-xl border border-[#164235] flex-1 flex flex-col items-center">
-                        <div className="text-white font-semibold text-sm self-start mb-6 flex items-center gap-2">
+                      <div className="bg-white p-5 rounded-xl border border-gray-200 flex-1 flex flex-col items-center">
+                        <div className="text-gray-800 font-bold text-sm self-start mb-6 flex items-center gap-2">
                           Soil data
-                          <svg className="w-3.5 h-3.5 text-[#a0b0a8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         </div>
                         {/* Fake Gauge Chart */}
                         <div className="relative w-48 h-24 overflow-hidden mb-2">
-                          <div className="absolute top-0 left-0 w-48 h-48 rounded-full border-[12px] border-[#0d3429] border-t-red-500 border-r-[#f59e0b] border-b-[#10b981] border-l-[#0d3429] transform -rotate-[45deg]"></div>
-                          <div className="absolute bottom-[-10px] left-1/2 w-1.5 h-20 bg-white shadow-md transform origin-bottom -translate-x-1/2 rotate-[35deg] rounded-full border-b-[20px] border-b-[#0b2921]"></div>
-                          <div className="absolute bottom-[-3px] left-1/2 w-3 h-3 bg-[#a0b0a8] border-2 border-[#10b981] rounded-full transform -translate-x-1/2"></div>
+                          <div className="absolute top-0 left-0 w-48 h-48 rounded-full border-[12px] border-gray-100 border-t-red-500 border-r-amber-500 border-b-emerald-500 border-l-gray-100 transform -rotate-[45deg]"></div>
+                          <div className="absolute bottom-[-10px] left-1/2 w-1.5 h-20 bg-gray-900 shadow-md transform origin-bottom -translate-x-1/2 rotate-[35deg] rounded-full border-b-[20px] border-b-gray-800"></div>
+                          <div className="absolute bottom-[-3px] left-1/2 w-3 h-3 bg-white border-2 border-emerald-500 rounded-full transform -translate-x-1/2"></div>
                         </div>
-                        <div className="text-[#10b981] font-bold text-lg">Excellent</div>
-                        <div className="text-[#a0b0a8] text-xs mb-6">Soil health</div>
+                        <div className="text-emerald-600 font-black text-lg">Excellent</div>
+                        <div className="text-gray-500 text-xs mb-6 font-medium">Soil health</div>
 
                         <div className="w-full text-xs font-semibold">
-                          <div className="grid grid-cols-4 gap-2 text-[#a0b0a8] border-b border-[#164235] pb-2 mb-2 px-2 uppercase text-[9px] tracking-wider">
+                          <div className="grid grid-cols-4 gap-2 text-gray-400 border-b border-gray-100 pb-2 mb-2 px-2 uppercase text-[9px] tracking-wider font-bold">
                             <span className="col-span-1">Parameter</span>
                             <span className="col-span-1 text-right">Value</span>
-                            <span className="col-span-1 pl-2 border-l border-[#164235]">Parameter</span>
+                            <span className="col-span-1 pl-2 border-l border-gray-100">Parameter</span>
                             <span className="col-span-1 text-right">Value</span>
                           </div>
-                          <div className="grid grid-cols-4 gap-2 text-white px-2 mb-2">
-                            <span className="col-span-1 text-[#759588] text-[10px]">Mn <span className="font-normal">(mg/kg)</span></span>
-                            <span className="col-span-1 text-right">2.5</span>
-                            <span className="col-span-1 pl-2 border-l border-[#164235] text-[#759588] text-[10px]">Zn <span className="font-normal">(mg/kg)</span></span>
-                            <span className="col-span-1 text-right">1.2</span>
+                          <div className="grid grid-cols-4 gap-2 text-gray-800 px-2 mb-2">
+                            <span className="col-span-1 text-gray-500 text-[10px]">Mn <span className="font-normal">(mg/kg)</span></span>
+                            <span className="col-span-1 text-right font-bold">2.5</span>
+                            <span className="col-span-1 pl-2 border-l border-gray-100 text-gray-500 text-[10px]">Zn <span className="font-normal">(mg/kg)</span></span>
+                            <span className="col-span-1 text-right font-bold">1.2</span>
                           </div>
                         </div>
                       </div>
                     )}
 
                     {(dashboardPlotTab === 'Overview' || dashboardPlotTab === 'Impact') && (
-                      <div className="bg-[#09221a] p-5 rounded-xl border border-[#164235] flex-1 flex flex-col items-center justify-center text-[#759588] text-sm text-center">
-                        <svg className="w-8 h-8 opacity-50 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                      <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 flex-1 flex flex-col items-center justify-center text-gray-500 text-sm text-center font-medium">
+                        <svg className="w-8 h-8 opacity-50 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                         Detailed data for {dashboardPlotTab} will be available in the next sync.
                       </div>
                     )}
@@ -1063,14 +1077,16 @@ const HaritSwarajMRV = () => {
                           <div style={{ minWidth: 160 }}>
                             <div style={{ fontWeight: 800, marginBottom: 4, color: '#065f46', fontSize: 13 }}>{plot.plot_id}</div>
                             <div style={{ fontSize: 12, color: '#555', marginBottom: 8, lineHeight: 1.4 }}>
+                              <strong>Location:</strong> {plot.village || 'N/A'}, {plot.district || 'N/A'}<br />
+                              <strong>Survey No:</strong> {plot.survey_number || 'N/A'}<br />
                               <strong>Species:</strong> {plot.species}<br />
                               <strong>Type:</strong> {plot.type}<br />
-                              <strong>Area:</strong> {((parseFloat(plot.expected_biomass) / 10).toFixed(1))} ha<br />
-                              <strong>Est. Biomass:</strong> {plot.expected_biomass} t
+                              <strong>Plot Area:</strong> {plot.area || ((parseFloat(plot.expected_biomass) / 10).toFixed(1))} ha<br />
+                              <strong>Est. Yield:</strong> {plot.expected_biomass} t
                             </div>
                             <button
                               onClick={() => { setDashboardSelectedPlot(plot); }}
-                              style={{ background: '#10b981', color: '#0b2921', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 800, width: '100%', boxShadow: '0 2px 4px rgba(16,185,129,0.3)' }}
+                              style={{ background: '#059669', color: '#ffffff', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 800, width: '100%', boxShadow: '0 2px 4px rgba(16,185,129,0.3)' }}
                             >
                               Open Details ←
                             </button>
@@ -1109,21 +1125,21 @@ const HaritSwarajMRV = () => {
 
                 {/* Map style toggles overlay (like reference) */}
                 <div className="absolute bottom-5 left-5 z-[400] flex gap-2">
-                  <div className="bg-[#0b2921]/90 backdrop-blur-md border border-[#164235] rounded-lg px-3 py-1.5 flex items-center gap-3 shadow-xl">
-                    <span className="text-white text-[11px] font-semibold flex items-center gap-1.5">
+                  <div className="bg-white/90 backdrop-blur-md border border-gray-200 rounded-lg px-3 py-1.5 flex items-center gap-3 shadow-md">
+                    <span className="text-gray-700 text-[11px] font-bold flex items-center gap-1.5">
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
                       Map Style
                     </span>
-                    <button className="bg-[#f59e0b] hover:bg-[#d97706] transition-colors text-[#0b2921] px-2 py-0.5 rounded text-[10px] font-bold tracking-wide">
+                    <button className="bg-amber-500 hover:bg-amber-600 transition-colors text-white px-2 py-0.5 rounded text-[10px] font-bold tracking-wide">
                       RGB
                     </button>
-                    <button className="bg-transparent hover:bg-white/10 transition-colors text-[#a0b0a8] px-2 py-0.5 rounded text-[10px] font-medium border border-[#1d4d3f]">
+                    <button className="bg-transparent hover:bg-gray-100 transition-colors text-gray-500 px-2 py-0.5 rounded text-[10px] font-bold border border-gray-300">
                       False Colour
                     </button>
-                    <button className="bg-transparent hover:bg-white/10 transition-colors text-[#a0b0a8] px-2 py-0.5 rounded text-[10px] font-medium border border-[#1d4d3f] flex items-center gap-1">
+                    <button className="bg-transparent hover:bg-gray-100 transition-colors text-gray-500 px-2 py-0.5 rounded text-[10px] font-bold border border-gray-300 flex items-center gap-1">
                       Labels
-                      <div className="w-5 h-3 bg-[#10b981] rounded-full relative ml-1">
-                        <div className="w-2.5 h-2.5 bg-[#0b2921] rounded-full absolute right-0.5 top-0.5"></div>
+                      <div className="w-5 h-3 bg-emerald-500 rounded-full relative ml-1">
+                        <div className="w-2.5 h-2.5 bg-white rounded-full absolute right-0.5 top-0.5 shadow-sm"></div>
                       </div>
                     </button>
                   </div>
@@ -1395,20 +1411,12 @@ const HaritSwarajMRV = () => {
 
             {activeModule === 'dashboard' && <DashboardView />}
             {activeModule === 'customer-id' && (
-              <div className="space-y-6 max-w-3xl mx-auto pt-10 pb-16 animate-fade-in">
-                <div className="bg-white border border-gray-200 rounded-2xl p-10 shadow-sm flex flex-col items-center gap-4 text-center">
-                  <div className="w-16 h-16 rounded-2xl bg-green-50 flex items-center justify-center text-green-600">
-                    <Users size={30} />
-                  </div>
-                  <h2 className="text-xl font-semibold text-gray-800">Customer Identification</h2>
-                  <p className="text-gray-500 text-sm max-w-md">
-                    This section will allow you to register and manage end-customers who receive and apply biochar. Linking customers to distribution records enables full supply chain traceability.
-                  </p>
-                  <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-emerald-200">
-                    Coming Soon
-                  </span>
-                </div>
-              </div>
+              <CustomerIdentificationView
+                fetchWithAuth={fetchWithAuth}
+                theme={theme}
+                showToast={showToast}
+                onSuccess={fetchAllData}
+              />
             )}
             {activeModule === 'supply-chain' && (
               <SupplyChainWizard
@@ -1481,6 +1489,7 @@ const HaritSwarajMRV = () => {
               <DistributionView
                 batches={biocharBatches}
                 distributions={distributions}
+                customers={customers}
                 fetchWithAuth={fetchWithAuth}
                 onDelete={handleDeleteDistribution}
                 theme={theme}
@@ -1498,6 +1507,7 @@ const HaritSwarajMRV = () => {
                 batches={biocharBatches}
                 onEdit={setEditingPlot}
                 onDelete={handleDeletePlot}
+                onProceed={setActiveModule}
                 apiUrl={apiUrl}
                 theme={theme}
               />
@@ -1508,6 +1518,7 @@ const HaritSwarajMRV = () => {
                 transports={transports}
                 distributions={distributions}
                 onDelete={handleDeleteBatch}
+                onProceed={setActiveModule}
                 theme={theme}
               />
             )}
@@ -1519,6 +1530,7 @@ const HaritSwarajMRV = () => {
                 batches={biocharBatches}
                 onEdit={setEditingPlot}
                 onDelete={handleDeletePlot}
+                onProceed={setActiveModule}
                 apiUrl={apiUrl}
                 theme={theme}
               />
@@ -1529,6 +1541,7 @@ const HaritSwarajMRV = () => {
                 transports={transports}
                 distributions={distributions}
                 onDelete={handleDeleteBatch}
+                onProceed={setActiveModule}
                 theme={theme}
               />
             )}

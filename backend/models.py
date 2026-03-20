@@ -172,7 +172,7 @@ class Distribution(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     batch_id = Column(Integer, ForeignKey("manufacturing_batches.id"), nullable=False)
-    customer_id = Column(String(50))
+    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=True)
     planned_use = Column(String(50))
     location = Column(String(100))
     quantity_kg = Column(Float, nullable=False)
@@ -182,6 +182,23 @@ class Distribution(Base):
     batch = relationship("ManufacturingBatch", back_populates="distributions")
     transports = relationship("Transport", back_populates="distribution")
     applications = relationship("BiocharApplication", back_populates="distribution")
+    
+    # New connection to Customer
+    customer = relationship("Customer", back_populates="distributions")
+
+class Customer(Base):
+    __tablename__ = "customers"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    customer_id = Column(String(100), unique=True, nullable=False, index=True) # Name or actual ID
+    block = Column(String(100))
+    village = Column(String(100))
+    contact_number = Column(String(20))
+    biochar_application = Column(String(100))
+    expected_demand = Column(Float) # in Tons
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    distributions = relationship("Distribution", back_populates="customer")
 
 class UnburnableProcess(Base):
     __tablename__ = "unburnable_processes"

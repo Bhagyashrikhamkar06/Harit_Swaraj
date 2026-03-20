@@ -37,6 +37,10 @@ def create_sample_plots(db, farmer_id):
             area=5.5,
             expected_biomass=12.5,
             status="verified",
+            survey_number="104/1A",
+            village="Ralegan Siddhi",
+            taluka="Parner",
+            district="Ahmednagar",
             verification_data={"verified_by": "admin", "verified_at": "2024-01-15"},
             created_at=datetime.now() - timedelta(days=90)
         ),
@@ -48,6 +52,10 @@ def create_sample_plots(db, farmer_id):
             area=3.2,
             expected_biomass=8.0,
             status="verified",
+            survey_number="88/2",
+            village="Hiware Bazar",
+            taluka="Nagar",
+            district="Ahmednagar",
             verification_data={"verified_by": "admin", "verified_at": "2024-01-20"},
             created_at=datetime.now() - timedelta(days=85)
         ),
@@ -59,6 +67,10 @@ def create_sample_plots(db, farmer_id):
             area=4.0,
             expected_biomass=10.0,
             status="verified",
+            survey_number="12/3B",
+            village="Kothrud",
+            taluka="Pune City",
+            district="Pune",
             verification_data={"verified_by": "admin", "verified_at": "2024-02-01"},
             created_at=datetime.now() - timedelta(days=75)
         ),

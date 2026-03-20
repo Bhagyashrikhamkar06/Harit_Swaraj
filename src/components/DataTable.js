@@ -38,6 +38,7 @@ const DataTable = ({
     emptyMessage = 'No records found.',
     searchPlaceholder = 'Search records...',
     variant = 'default',
+    renderCardFooter,
 }) => {
     const [search, setSearch] = useState('');
     const [sortKey, setSortKey] = useState(null);
@@ -304,7 +305,7 @@ const DataTable = ({
 
                                     {/* Card Fields */}
                                     <div className="space-y-1.5">
-                                        {subCols.slice(0, 6).map(col => (
+                                        {subCols.slice(0, 8).map(col => (
                                             <div key={col.key} className="flex justify-between text-xs gap-2">
                                                 <span className="text-gray-400 font-medium flex-shrink-0">{col.label}</span>
                                                 <span className="text-gray-700 text-right">
@@ -313,6 +314,13 @@ const DataTable = ({
                                             </div>
                                         ))}
                                     </div>
+
+                                    {/* Card Footer Integration */}
+                                    {renderCardFooter && (
+                                        <div className="mt-4 pt-4 border-t border-gray-100 flex justify-center">
+                                            {renderCardFooter(row)}
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })
